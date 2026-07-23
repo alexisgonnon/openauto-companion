@@ -1004,3 +1004,30 @@ Non-behavior work (formatting, docs-only edits, no-op refactors) does not requir
   - AA stream continuity: the airplane cycle necessarily interrupted the
     transport; AA reconnected automatically and the `:5277` session was
     established after recovery.
+
+## 2026-07-23 14:17 (local)
+
+- What changed:
+  - Added the approved Calm Cockpit dark design system, shared cockpit components, and pure presentation mapping.
+  - Refreshed Garage, Vehicle Status, Pairing, and QR Scanner with explicit state copy, QR-first pairing, safe insets, responsive scrolling, previews, and accessibility semantics.
+  - Added seven JVM presentation-rule tests and documented the approved design and implementation plan.
+- Why:
+  - Promote the `UI polish pass` wishlist item into a coherent, low-glare companion experience without changing networking, pairing protocol, persistence, or service behavior.
+- Status: implementation complete and independently reviewed with no code blockers; unlocked-device visual and tap-through QA remains pending.
+- Dependency decision:
+  - Companion-only: Yes.
+- Wishlist promotion:
+  - Source item: `UI polish pass`.
+  - Promotion result: promoted from Later into the active roadmap, pending final device inspection.
+- Next steps:
+  - 1) Unlock Pixel `39260DLJH000LX` and inspect Garage, Vehicle Status, QR-first/manual Pairing, and Scanner permission/error states.
+  - 2) Confirm scroll reachability and system-bar treatment on the device, then move the roadmap item to Recently Completed.
+  - 3) Merge or publish `codex/ui-refresh` after the visual pass is accepted.
+- Verification:
+  - `git diff --check` -> PASS.
+  - `./gradlew :app:testDebugUnitTest :app:assembleDebug` -> PASS (`BUILD SUCCESSFUL`; 173 unit tests, zero failures).
+  - Focused scanner gate after the accessibility review fix -> PASS.
+  - Independent final implementation review -> approved; no code blockers.
+  - Debug APK install on Pixel `39260DLJH000LX` -> PASS.
+  - Pixel screenshot/tap-through -> PENDING because the attached phone remained securely locked; no credential bypass was attempted.
+  - Android Auto continuity -> not exercised; runtime lifecycle and networking behavior were intentionally untouched.

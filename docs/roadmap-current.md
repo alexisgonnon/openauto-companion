@@ -45,6 +45,14 @@ Governance: capture new ideas in `docs/wishlist.md`; only promoted items should 
   - Outcome: all behavior-changing sessions use Superpowers plus repo docs and
     leave vision alignment + handoff evidence without GSD or `.planning` state.
 
+- Calm Cockpit UI refresh: implementation complete; unlocked-device visual pass pending.
+  - Rationale: promote the UI polish wishlist item into a coherent low-glare
+    experience across garage, status, QR-first pairing, and scanning.
+  - Dependency check: companion-only; no head-unit, protocol, persistence, or
+    runtime-service changes.
+  - Outcome: code and full Gradle gate are complete on `codex/ui-refresh`;
+    finish tap-through QA after the attached Pixel is unlocked.
+
 ## Next
 
 - Validate deterministic desktop-app routing when phone-to-headunit bridge is enabled.
@@ -78,9 +86,6 @@ Governance: capture new ideas in `docs/wishlist.md`; only promoted items should 
 - Add CI automation for `:app:testDebugUnitTest` and `:app:assembleDebug` on pull requests.
   - Rationale: local verification is good; CI makes quality gates persistent.
   - Outcome: less risk of broken branches and faster review confidence.
-- Evaluate UI polish pass for status and pairing screens.
-  - Rationale: core behavior is improving; UX clarity can now be refined without changing architecture.
-  - Outcome: cleaner in-app guidance and reduced pairing friction.
 
 ## Deferred
 
