@@ -33,6 +33,7 @@ import org.openauto.companion.net.api.ApiPairingCredentialStore
 import org.openauto.companion.net.api.ApiPairingDraft
 import org.openauto.companion.service.CompanionService
 import org.openauto.companion.service.VehicleIdentity
+import org.openauto.companion.ui.theme.OpenAutoCompanionTheme
 
 class MainActivity : ComponentActivity() {
     private lateinit var prefs: CompanionPrefs
@@ -52,7 +53,7 @@ class MainActivity : ComponentActivity() {
         requestPermissions()
 
         setContent {
-            MaterialTheme {
+            OpenAutoCompanionTheme {
                 var vehicles by remember { mutableStateOf(prefs.vehicles) }
                 var screen by remember { mutableStateOf<Screen>(
                     if (vehicles.isEmpty()) Screen.Pairing else Screen.VehicleList
