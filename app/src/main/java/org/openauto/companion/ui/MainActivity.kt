@@ -148,11 +148,6 @@ class MainActivity : ComponentActivity() {
                                 pairingState = PairingUiState.Idle
                                 screen = Screen.Pairing
                             },
-                            onRemoveVehicle = { vehicle ->
-                                prefs.removeVehicle(vehicle.id)
-                                vehicles = prefs.vehicles
-                                restartMonitoring()
-                            }
                         )
                     }
                     is Screen.Pairing -> {

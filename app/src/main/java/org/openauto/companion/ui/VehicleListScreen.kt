@@ -1,24 +1,37 @@
 package org.openauto.companion.ui
 
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.openauto.companion.R
 import org.openauto.companion.data.Vehicle
+import org.openauto.companion.ui.theme.CockpitMint
+import org.openauto.companion.ui.theme.CockpitMuted
+import org.openauto.companion.ui.theme.OpenAutoCompanionTheme
 
 @Composable
 fun VehicleListScreen(
@@ -26,129 +39,153 @@ fun VehicleListScreen(
     connectedSsid: String?,
     onVehicleTap: (Vehicle) -> Unit,
     onAddVehicle: () -> Unit,
-    onRemoveVehicle: (Vehicle) -> Unit
 ) {
+    val connectedVehiclePresent = vehicles.any { it.ssid == connectedSsid }
+    val displayedVehicles = vehicles.sortedByDescending { it.ssid == connectedSsid }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .padding(WindowInsets.safeDrawing.asPaddingValues())
+            .padding(horizontal = 22.dp),
     ) {
-        val context = LocalContext.current
-        var tapTimes by remember { mutableStateOf(listOf<Long>()) }
-
-        Spacer(modifier = Modifier.height(32.dp))
-        Image(
-            painter = painterResource(R.drawable.prodigy_logo),
-            contentDescription = "Prodigy",
-            modifier = Modifier
-                .size(120.dp)
-                .align(Alignment.CenterHorizontally)
-                .clickable {
-                    val now = System.currentTimeMillis()
-                    tapTimes = (tapTimes + now).filter { now - it < 2000 }
-                    if (tapTimes.size >= 5) {
-                        tapTimes = emptyList()
-                        context.startActivity(Intent(Intent.ACTION_VIEW,
-                            Uri.parse("https://youtu.be/gbyvvc6n2Oo?si=eWWmscODmVbl-fhH&t=8")))
-                    }
-                }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("OpenAuto Prodigy", style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.align(Alignment.CenterHorizontally))
-        Spacer(modifier = Modifier.height(24.dp))
-
         LazyColumn(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(vehicles, key = { it.id }) { vehicle ->
-                val isConnected = vehicle.ssid == connectedSsid
-                VehicleRow(
+            item {
+                Spacer(Modifier.height(24.dp))
+                Text(
+                    text = "PRODIGY",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = CockpitMint,
+                )
+                Spacer(Modifier.height(12.dp))
+                Text("Your garage", style = MaterialTheme.typography.displayLarge)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = garageSummary(vehicles.size, connectedVehiclePresent),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(20.dp))
+            }
+
+            items(displayedVehicles, key = { it.id }) { vehicle ->
+                VehicleCard(
                     vehicle = vehicle,
-                    isConnected = isConnected,
+                    connected = vehicle.ssid == connectedSsid,
                     onClick = { onVehicleTap(vehicle) },
-                    onRemove = { onRemoveVehicle(vehicle) }
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            item { Spacer(Modifier.height(8.dp)) }
+        }
 
         Button(
             onClick = onAddVehicle,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            enabled = vehicles.size < Vehicle.MAX_VEHICLES
+            enabled = vehicles.size < Vehicle.MAX_VEHICLES,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp),
         ) {
-            Text("Add Vehicle")
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(10.dp))
+            Text("Add vehicle")
         }
-
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(Modifier.height(18.dp))
     }
 }
 
 @Composable
-private fun VehicleRow(
+private fun VehicleCard(
     vehicle: Vehicle,
-    isConnected: Boolean,
+    connected: Boolean,
     onClick: () -> Unit,
-    onRemove: () -> Unit
 ) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
+    CockpitCard(
+        modifier = Modifier.fillMaxWidth(),
+        highlighted = connected,
+        onClick = onClick,
     ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Connection indicator
-            val color = if (isConnected) Color(0xFF4CAF50) else Color(0xFF9E9E9E)
-            Surface(
-                shape = MaterialTheme.shapes.small,
-                color = color,
-                modifier = Modifier.size(12.dp)
-            ) {}
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(vehicle.name, style = MaterialTheme.typography.titleMedium)
-                if (vehicle.name != vehicle.ssid) {
-                    Text(vehicle.ssid, style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+        if (connected) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ConnectionDot(CockpitMint, "Connected")
+                Spacer(Modifier.width(10.dp))
+                Text("CONNECTED", style = MaterialTheme.typography.labelSmall, color = CockpitMint)
             }
+            Spacer(Modifier.height(18.dp))
+        }
 
-            IconButton(onClick = { showDeleteDialog = true }) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Remove vehicle",
-                    tint = MaterialTheme.colorScheme.error
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(vehicle.name, style = MaterialTheme.typography.headlineLarge)
+                if (vehicle.name != vehicle.ssid) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        vehicle.ssid,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = if (connected) "Data sharing active" else "Waiting for vehicle",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (connected) CockpitMint else CockpitMuted,
                 )
             }
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
+}
 
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Remove ${vehicle.name}?") },
-            text = { Text("This will unpair this vehicle. You can re-pair later with a new PIN.") },
-            confirmButton = {
-                TextButton(onClick = { showDeleteDialog = false; onRemove() }) {
-                    Text("Remove", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
-                }
-            }
+private fun previewVehicles(): List<Vehicle> {
+    val previewSecret = "00".repeat(32)
+    return listOf(
+    Vehicle(
+        id = "miata",
+        ssid = "Prodigy_e57d",
+        name = "Miata",
+        apiClientId = "preview-miata",
+        apiSecretHex = previewSecret,
+    ),
+    Vehicle(
+        id = "daily",
+        ssid = "Prodigy_daily",
+        name = "Daily driver",
+        apiClientId = "preview-daily",
+        apiSecretHex = previewSecret,
+    ),
+    )
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0C100E)
+@Composable
+private fun GarageConnectedPreview() {
+    OpenAutoCompanionTheme {
+        VehicleListScreen(
+            vehicles = previewVehicles(),
+            connectedSsid = "Prodigy_e57d",
+            onVehicleTap = {},
+            onAddVehicle = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0C100E)
+@Composable
+private fun GarageEmptyPreview() {
+    OpenAutoCompanionTheme {
+        VehicleListScreen(
+            vehicles = emptyList(),
+            connectedSsid = null,
+            onVehicleTap = {},
+            onAddVehicle = {},
         )
     }
 }
