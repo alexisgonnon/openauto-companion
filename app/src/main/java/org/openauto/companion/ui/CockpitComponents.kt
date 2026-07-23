@@ -37,6 +37,7 @@ import java.util.Locale
 fun CockpitTopBar(
     title: String,
     onBack: () -> Unit,
+    backEnabled: Boolean = true,
     modifier: Modifier = Modifier,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -46,7 +47,7 @@ fun CockpitTopBar(
             .heightIn(min = 56.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+        IconButton(onClick = onBack, enabled = backEnabled, modifier = Modifier.size(48.dp)) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
         }
         Text(
