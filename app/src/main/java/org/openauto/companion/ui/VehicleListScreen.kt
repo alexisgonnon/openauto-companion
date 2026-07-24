@@ -1,5 +1,6 @@
 package org.openauto.companion.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,8 +27,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.openauto.companion.R
 import org.openauto.companion.data.Vehicle
 import org.openauto.companion.ui.theme.CockpitBlue
 import org.openauto.companion.ui.theme.CockpitMuted
@@ -55,19 +59,44 @@ fun VehicleListScreen(
         ) {
             item {
                 Spacer(Modifier.height(24.dp))
-                Text(
-                    text = "PRODIGY",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = CockpitBlue,
-                )
-                Spacer(Modifier.height(12.dp))
-                Text("Your garage", style = MaterialTheme.typography.displayLarge)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = garageSummary(vehicles.size, connectedVehiclePresent),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(top = 8.dp),
+                    ) {
+                        Text("Your garage", style = MaterialTheme.typography.displayLarge)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = garageSummary(vehicles.size, connectedVehiclePresent),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column(
+                        modifier = Modifier.width(76.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.prodigy_logo),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(MaterialTheme.shapes.small),
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "PRODIGY",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = CockpitBlue,
+                        )
+                    }
+                }
                 Spacer(Modifier.height(20.dp))
             }
 
