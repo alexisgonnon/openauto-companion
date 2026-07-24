@@ -71,7 +71,11 @@ fun VehicleListScreen(
                             .weight(1f)
                             .padding(top = 8.dp),
                     ) {
-                        Text("Your garage", style = MaterialTheme.typography.displayLarge)
+                        Text(
+                            text = "Your garage",
+                            style = MaterialTheme.typography.displayLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
                         Spacer(Modifier.height(4.dp))
                         Text(
                             text = garageSummary(vehicles.size, connectedVehiclePresent),
@@ -144,7 +148,7 @@ private fun VehicleCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ConnectionDot(CockpitBlue, "Connected")
                 Spacer(Modifier.width(10.dp))
-                Text("CONNECTED", style = MaterialTheme.typography.labelSmall, color = CockpitBlue)
+                Text("CONNECTED", style = MaterialTheme.typography.labelSmall, color = CockpitBlueText)
             }
             Spacer(Modifier.height(18.dp))
         }
@@ -164,7 +168,7 @@ private fun VehicleCard(
                 Text(
                     text = if (connected) "Data sharing active" else "Waiting for vehicle",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (connected) CockpitBlue else CockpitMuted,
+                    color = if (connected) CockpitBlueText else CockpitMuted,
                 )
             }
             Icon(

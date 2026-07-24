@@ -13,7 +13,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.runtime.*
@@ -131,7 +130,7 @@ class MainActivity : ComponentActivity() {
                         title = { Text("Pairing Successful") },
                         text = { Text("Vehicle \"$ssid\" has been paired. The app will connect automatically when in range.") },
                         confirmButton = {
-                            TextButton(onClick = { showPairingSuccess = null }) {
+                            CockpitTextButton(onClick = { showPairingSuccess = null }) {
                                 Text("OK")
                             }
                         }

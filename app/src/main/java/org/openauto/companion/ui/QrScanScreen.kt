@@ -123,7 +123,7 @@ fun QrScanScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.height(14.dp))
-                        TextButton(onClick = onCancel, modifier = Modifier.align(Alignment.End)) {
+                        CockpitTextButton(onClick = onCancel, modifier = Modifier.align(Alignment.End)) {
                             Text("Go back")
                         }
                     }

@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.openauto.companion.ui.theme.CockpitBlue
+import org.openauto.companion.ui.theme.CockpitBlueText
 import org.openauto.companion.ui.theme.CockpitMuted
 import org.openauto.companion.ui.theme.OpenAutoCompanionTheme
 
@@ -74,7 +75,8 @@ fun StatusScreen(
     var showMenu by rememberSaveable { mutableStateOf(false) }
     var showUnpairDialog by rememberSaveable { mutableStateOf(false) }
     val readiness = readinessPresentation(status)
-    val readinessColor = toneColor(readiness.tone)
+    val readinessAccentColor = toneColor(readiness.tone)
+    val readinessTextColor = toneTextColor(readiness.tone)
 
     Column(
         modifier = Modifier
@@ -107,10 +109,10 @@ fun StatusScreen(
 
         CockpitCard(modifier = Modifier.fillMaxWidth(), highlighted = true) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ConnectionDot(readinessColor, readiness.title)
+                ConnectionDot(readinessAccentColor, readiness.title)
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(readiness.title, style = MaterialTheme.typography.headlineLarge, color = readinessColor)
+                    Text(readiness.title, style = MaterialTheme.typography.headlineLarge, color = readinessTextColor)
                     Spacer(Modifier.height(4.dp))
                     Text(
                         readiness.detail,
@@ -141,7 +143,7 @@ fun StatusScreen(
                         UiTone.Neutral -> "WAITING"
                     },
                     style = MaterialTheme.typography.labelSmall,
-                    color = readinessColor,
+                    color = readinessTextColor,
                 )
             }
         }
@@ -218,7 +220,7 @@ fun StatusScreen(
                 ) { Text("Unpair", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showUnpairDialog = false }) { Text("Cancel") }
+                CockpitTextButton(onClick = { showUnpairDialog = false }) { Text("Cancel") }
             },
         )
     }
@@ -244,7 +246,7 @@ private fun SharingRow(
         Text(
             if (active) "ACTIVE" else inactiveLabel,
             style = MaterialTheme.typography.labelSmall,
-            color = if (active) CockpitBlue else CockpitMuted,
+            color = if (active) CockpitBlueText else CockpitMuted,
         )
     }
 }

@@ -29,7 +29,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -225,7 +224,7 @@ fun PairingScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (onCancel != null) {
-                        TextButton(onClick = onCancel, enabled = !pairing) { Text("Cancel") }
+                        CockpitTextButton(onClick = onCancel, enabled = !pairing) { Text("Cancel") }
                         Spacer(Modifier.width(8.dp))
                     }
                     Button(
