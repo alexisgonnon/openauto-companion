@@ -1059,3 +1059,15 @@ Non-behavior work (formatting, docs-only edits, no-op refactors) does not requir
   1. Field-test a naturally missed/lost callback and pull-to-refresh without closing the app.
   2. Validate the live disconnected retry path when no active AA session is at risk.
   3. Continue observing automatic callback reliability and consider targeted instrumentation.
+
+## 2026-07-24 — Fable connection-review fixes
+
+- **Review/fixes:** Claude Fable initially returned `CHANGES_REQUIRED` because the retained Wi-Fi monitor could replay a stale per-vehicle configuration snapshot and because unreadable/redacted SSID evidence was treated as confirmed network absence. Commits `e73b2a6` and `26b8dc9` now atomically replace the runtime vehicle catalog with current settings before refresh, and preserve a healthy connected runtime when Wi-Fi evidence is indeterminate. Explicit refresh still clears on confirmed absence or when already disconnected.
+- **Scope/status:** Companion-only; no roadmap resequencing. Publication remains gated on a new Fable `SIGN_OFF`.
+- **RED/GREEN evidence:** Slot/catalog tests failed RED before the update seams existed, and the reconciliation-policy test failed RED before production policy existed. Focused regressions then passed GREEN. The final `./gradlew :app:testDebugUnitTest :app:assembleDebug` gate returned `BUILD SUCCESSFUL` with 188 tests and zero failures.
+- **APK/device:** `/mnt/e/claude/personal/openautopro/openauto-companion/app/build/outputs/apk/debug/app-debug.apk` (`37M`), SHA-256 `87ad33419ec651c390a7dde1f97b1b219ae235fbf2ac941a7211ea68dbba5b67`. Pixel `39260DLJH000LX` installation returned `Success`. Final logs at 18:17:28 showed ConnectivityManager `ssid=null`, the fallback matching `Prodigy_e57d`, and the SOCKS listener starting.
+- **Limits:** The phone remained securely locked, so the final-build Garage/Status pull rerun is pending; the previous build connected pulls passed. The live disconnected path and Android Auto playback continuity remain unexercised.
+- **Next steps:**
+  1. Rerun Claude Fable on `dev...HEAD`.
+  2. Publish, open the PR against `dev`, and merge only after explicit `SIGN_OFF`.
+  3. Field-test connected and disconnected refresh behavior plus Android Auto playback continuity.

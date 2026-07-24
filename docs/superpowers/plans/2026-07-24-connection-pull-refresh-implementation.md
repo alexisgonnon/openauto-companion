@@ -625,6 +625,8 @@ Claude Fable review of `dev...codex/ui-refresh` returned `CHANGES_REQUIRED` with
 
 **Verify:** Focused tests, then the full unit suite. Commit as `fix: refresh with current vehicle settings`.
 
+**Completed verification:** The slot and catalog regressions failed RED before their seams existed, then passed in focused runs and the full unit suite. Commit: `e73b2a6` (`fix: refresh with current vehicle settings`).
+
 ### Task 6: Distinguish confirmed absence from unreadable SSID evidence
 
 **Root cause:** manual reconciliation currently maps every no-match outcome to confirmed absence. When Android returns a Wi-Fi transport whose SSID is null or `<unknown ssid>` because location access is unavailable, a healthy pull stops the service even though the paired network may still be present.
@@ -640,6 +642,10 @@ Claude Fable review of `dev...codex/ui-refresh` returned `CHANGES_REQUIRED` with
 
 **Verify:** Focused policy tests, combined refresh regressions, and the full Gradle gate. Reinstall on Pixel and repeat connected Garage/Status pulls. Update the roadmap/handoff to scope live validation to the connected path and record the Fable correction. Commit as `fix: preserve runtime when SSID is unreadable` and `docs: record Fable review fixes`.
 
+**Completed verification:** The policy regression failed RED before production policy existed; all six focused evidence cases, the combined refresh regressions, and the full Gradle gate passed GREEN. Commit: `26b8dc9` (`fix: preserve runtime when SSID is unreadable`). Final-build installation and service logs passed, while the securely locked phone left the final-build Garage/Status pull rerun pending.
+
 ### Publication gate
 
 Rerun Claude Code with `--model fable` on `dev...HEAD`. Only an explicit `SIGN_OFF` permits push, PR creation against `dev`, and merge. Any new Critical or Important finding returns to RED/GREEN before publication.
+
+**Status:** Pending the required Fable rerun and explicit `SIGN_OFF`.
