@@ -599,3 +599,47 @@ Ask a fresh reviewer to inspect the complete implementation from design commit `
 - verification honesty.
 
 Fix every Critical or Important finding through a new RED/GREEN cycle, rerun `./gradlew :app:testDebugUnitTest :app:assembleDebug`, and re-request review before declaring completion.
+
+
+---
+
+## Fable sign-off fix wave — 2026-07-24
+
+Claude Fable review of `dev...codex/ui-refresh` returned `CHANGES_REQUIRED` with two Important findings. Publication remains blocked until both fixes complete RED/GREEN verification and Fable signs off.
+
+### Task 5: Apply the latest per-vehicle configuration before refresh
+
+**Root cause:** `MonitorSlot.refreshOrStart(next)` refreshes the existing `WifiMonitor` and discards the new monitor, while the existing monitor retains the vehicle list captured at construction. Status toggles update `CompanionPrefs` and the live service but not that retained snapshot, so a healthy pull can replay stale `socks5Enabled` or `audioKeepAlive` values.
+
+**Files:**
+- Modify `app/src/main/java/org/openauto/companion/MonitorSlot.kt`
+- Modify `app/src/main/java/org/openauto/companion/CompanionApp.kt`
+- Modify `app/src/main/java/org/openauto/companion/service/WifiMonitor.kt`
+- Create `app/src/main/java/org/openauto/companion/service/RuntimeVehicleCatalog.kt`
+- Modify `app/src/test/java/org/openauto/companion/MonitorSlotTest.kt`
+- Create `app/src/test/java/org/openauto/companion/service/RuntimeVehicleCatalogTest.kt`
+
+**RED:** Add a slot regression proving an existing monitor receives caller-supplied current configuration, plus a catalog regression proving replacement for the same SSID exposes the new sharing/audio values. Run the focused tests and confirm they fail because the update seam/catalog do not exist.
+
+**GREEN:** Let `MonitorSlot.refreshOrStart` accept a scoped existing-monitor refresh callback. `CompanionApp` passes the fresh `vehicles` list to the existing monitor. `WifiMonitor` atomically replaces a pure immutable runtime-vehicle catalog before explicit reconciliation; callbacks and starts read the current catalog. Keep initial and automatic paths non-forcing.
+
+**Verify:** Focused tests, then the full unit suite. Commit as `fix: refresh with current vehicle settings`.
+
+### Task 6: Distinguish confirmed absence from unreadable SSID evidence
+
+**Root cause:** manual reconciliation currently maps every no-match outcome to confirmed absence. When Android returns a Wi-Fi transport whose SSID is null or `<unknown ssid>` because location access is unavailable, a healthy pull stops the service even though the paired network may still be present.
+
+**Files:**
+- Create `app/src/main/java/org/openauto/companion/service/WifiReconciliationPolicy.kt`
+- Create `app/src/test/java/org/openauto/companion/service/WifiReconciliationPolicyTest.kt`
+- Modify `app/src/main/java/org/openauto/companion/service/WifiMonitor.kt`
+
+**RED:** Add pure policy cases proving that explicit refresh clears confirmed absence/readable non-match, but preserves a connected runtime when Wi-Fi is observed and every SSID is unreadable or inspection failed. Confirm focused failure before production policy exists.
+
+**GREEN:** Track whether the scan observed Wi-Fi, any readable SSID, or an inspection failure. At the no-match exit, clear only when the pure evidence policy classifies the result as confirmed absence. Preserve the approved explicit clearing behavior for no Wi-Fi and readable non-paired SSIDs; automatic paths remain non-clearing.
+
+**Verify:** Focused policy tests, combined refresh regressions, and the full Gradle gate. Reinstall on Pixel and repeat connected Garage/Status pulls. Update the roadmap/handoff to scope live validation to the connected path and record the Fable correction. Commit as `fix: preserve runtime when SSID is unreadable` and `docs: record Fable review fixes`.
+
+### Publication gate
+
+Rerun Claude Code with `--model fable` on `dev...HEAD`. Only an explicit `SIGN_OFF` permits push, PR creation against `dev`, and merge. Any new Critical or Important finding returns to RED/GREEN before publication.
