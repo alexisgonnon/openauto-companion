@@ -78,6 +78,12 @@ class CompanionService : Service() {
             return START_STICKY
         }
 
+        val refreshRequested = intent?.getBooleanExtra(EXTRA_FORCE_RECONNECT, false) == true
+        val forceReconnect = shouldForceRuntimeReconnect(
+            refreshRequested = refreshRequested,
+            connected = _connected.value,
+        )
+
         val config = parseRuntimeConfig(intent)
         if (config == null) {
             val requestedIdentity = requestedVehicleIdentity(intent)
@@ -95,9 +101,12 @@ class CompanionService : Service() {
         _vehicleName.value = config.vehicleName
         _vehicleId.value = config.vehicleIdentity
 
-        if (config.vehicleIdentity == currentVehicleKey &&
-            config.wifiNetwork == currentWifiNetwork &&
-            generationJob?.isActive == true
+        if (shouldReuseRuntimeGeneration(
+                forceReconnect = forceReconnect,
+                sameVehicle = config.vehicleIdentity == currentVehicleKey,
+                sameNetwork = config.wifiNetwork == currentWifiNetwork,
+                runtimeActive = generationJob?.isActive == true,
+            )
         ) {
             currentResources?.setInternetSharingEnabled(config.socks5Enabled)
             updateNotification(
@@ -657,6 +666,7 @@ class CompanionService : Service() {
         const val EXTRA_API_TCP_PORT = "api_tcp_port"
         const val EXTRA_SOCKS5_ENABLED = "socks5_enabled"
         const val EXTRA_AUDIO_KEEP_ALIVE = "audio_keep_alive"
+        const val EXTRA_FORCE_RECONNECT = "force_reconnect"
 
         private var instance: CompanionService? = null
 

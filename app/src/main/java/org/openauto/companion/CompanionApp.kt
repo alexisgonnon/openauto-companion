@@ -22,6 +22,12 @@ class CompanionApp : Application() {
         wifiMonitorSlot.startIfAbsent(WifiMonitor(this, vehicles))
     }
 
+    fun refreshWifiMonitor(vehicles: List<Vehicle>) {
+        wifiMonitorSlot.refreshOrStart(WifiMonitor(this, vehicles)) { monitor ->
+            monitor.refresh(vehicles)
+        }
+    }
+
     fun stopWifiMonitor() {
         wifiMonitorSlot.stopCurrent()
     }
