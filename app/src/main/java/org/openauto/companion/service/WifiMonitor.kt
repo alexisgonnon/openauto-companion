@@ -73,7 +73,17 @@ class WifiMonitor(
         checkCurrentNetwork()
     }
 
-    private fun checkCurrentNetwork() {
+    override fun refresh() {
+        checkCurrentNetwork(
+            forceReconnect = true,
+            clearWhenMissing = true,
+        )
+    }
+
+    private fun checkCurrentNetwork(
+        forceReconnect: Boolean = false,
+        clearWhenMissing: Boolean = false,
+    ) {
         try {
             @Suppress("DEPRECATION")
             for (network in connectivityManager.allNetworks) {
@@ -87,7 +97,7 @@ class WifiMonitor(
                     Log.i(TAG, "Already connected to vehicle '${vehicle.name}' via ConnectivityManager")
                     wifiNetwork = network
                     activeVehicle = vehicle
-                    startCompanionService(vehicle)
+                    startCompanionService(vehicle, forceReconnect)
                     return
                 }
                 if (wifiNetwork == null) wifiNetwork = network
@@ -107,13 +117,18 @@ class WifiMonitor(
             if (vehicle != null) {
                 Log.i(TAG, "Already connected to vehicle '${vehicle.name}' via WifiManager")
                 activeVehicle = vehicle
-                startCompanionService(vehicle)
+                startCompanionService(vehicle, forceReconnect)
                 return
             }
         } catch (e: Exception) {
             Log.w(TAG, "WifiManager fallback failed", e)
         }
 
+        if (clearWhenMissing) {
+            wifiNetwork = null
+            activeVehicle = null
+            stopCompanionService()
+        }
         Log.i(TAG, "No paired vehicle SSID found in current networks")
     }
 
@@ -129,7 +144,10 @@ class WifiMonitor(
 
     fun getWifiNetwork(): Network? = wifiNetwork
 
-    private fun startCompanionService(vehicle: Vehicle) {
+    private fun startCompanionService(
+        vehicle: Vehicle,
+        forceReconnect: Boolean = false,
+    ) {
         val clientId = vehicle.apiClientId.trim()
         val secretHex = vehicle.apiSecretHex.trim()
         if (!hasValidRuntimeCredentials(vehicle)) {
@@ -147,6 +165,7 @@ class WifiMonitor(
             putExtra(CompanionService.EXTRA_API_TCP_PORT, vehicle.apiTcpPort)
             putExtra(CompanionService.EXTRA_SOCKS5_ENABLED, vehicle.socks5Enabled)
             putExtra(CompanionService.EXTRA_AUDIO_KEEP_ALIVE, vehicle.audioKeepAlive)
+            putExtra(CompanionService.EXTRA_FORCE_RECONNECT, forceReconnect)
         }
         ContextCompat.startForegroundService(context, intent)
     }
