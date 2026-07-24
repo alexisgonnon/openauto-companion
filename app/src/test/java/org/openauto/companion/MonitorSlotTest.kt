@@ -23,6 +23,35 @@ class MonitorSlotTest {
     }
 
     @Test
+    fun refreshOrStartRefreshesExistingMonitorWithoutReplacingIt() {
+        val slot = MonitorSlot<FakeMonitor>()
+        val first = FakeMonitor()
+        val replacement = FakeMonitor()
+        slot.startIfAbsent(first)
+
+        slot.refreshOrStart(replacement)
+
+        assertEquals(1, first.startCount)
+        assertEquals(1, first.refreshCount)
+        assertEquals(0, first.stopCount)
+        assertEquals(0, replacement.startCount)
+        assertEquals(0, replacement.refreshCount)
+        assertSame(first, slot.current)
+    }
+
+    @Test
+    fun refreshOrStartStartsProvidedMonitorWhenSlotIsEmpty() {
+        val slot = MonitorSlot<FakeMonitor>()
+        val monitor = FakeMonitor()
+
+        slot.refreshOrStart(monitor)
+
+        assertEquals(1, monitor.startCount)
+        assertEquals(0, monitor.refreshCount)
+        assertSame(monitor, slot.current)
+    }
+
+    @Test
     fun stopCurrentAlsoStopsTheCompanionService() {
         val slot = MonitorSlot<FakeMonitor>()
         val monitor = FakeMonitor()
@@ -37,6 +66,7 @@ class MonitorSlotTest {
     private class FakeMonitor : MonitorLifecycle {
         var startCount = 0
         var stopCount = 0
+        var refreshCount = 0
 
         override fun start() {
             startCount += 1
@@ -44,6 +74,10 @@ class MonitorSlotTest {
 
         override fun stop() {
             stopCount += 1
+        }
+
+        override fun refresh() {
+            refreshCount += 1
         }
     }
 }
