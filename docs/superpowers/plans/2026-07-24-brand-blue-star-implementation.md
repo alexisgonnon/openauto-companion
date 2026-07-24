@@ -276,4 +276,3 @@ Expected: clean formatting, a fresh successful full gate, and only the intended 
 git add docs/session-handoffs.md
 git commit -m "docs: record Prodigy branding refinement"
 ```
-
