@@ -16,10 +16,13 @@ internal class MonitorSlot<T : MonitorLifecycle> {
         next.start()
     }
 
-    fun refreshOrStart(next: T) {
+    fun refreshOrStart(
+        next: T,
+        refreshExisting: (T) -> Unit = { it.refresh() },
+    ) {
         val existing = current
         if (existing != null) {
-            existing.refresh()
+            refreshExisting(existing)
             return
         }
         current = next

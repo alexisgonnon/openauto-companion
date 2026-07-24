@@ -40,6 +40,24 @@ class MonitorSlotTest {
     }
 
     @Test
+    fun refreshOrStartAppliesLatestInputToExistingMonitor() {
+        val slot = MonitorSlot<FakeMonitor>()
+        val first = FakeMonitor()
+        val replacement = FakeMonitor()
+        slot.startIfAbsent(first)
+
+        slot.refreshOrStart(replacement) { monitor ->
+            monitor.appliedConfig = "latest"
+            monitor.refresh()
+        }
+
+        assertEquals("latest", first.appliedConfig)
+        assertNull(replacement.appliedConfig)
+        assertEquals(1, first.refreshCount)
+        assertSame(first, slot.current)
+    }
+
+    @Test
     fun refreshOrStartStartsProvidedMonitorWhenSlotIsEmpty() {
         val slot = MonitorSlot<FakeMonitor>()
         val monitor = FakeMonitor()
@@ -67,6 +85,7 @@ class MonitorSlotTest {
         var startCount = 0
         var stopCount = 0
         var refreshCount = 0
+        var appliedConfig: String? = null
 
         override fun start() {
             startCount += 1
