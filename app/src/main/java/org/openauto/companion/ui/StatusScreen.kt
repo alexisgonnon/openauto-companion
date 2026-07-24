@@ -33,10 +33,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -82,9 +85,22 @@ fun StatusScreen(
     val readinessAccentColor = toneColor(readiness.tone)
     val readinessTextColor = toneTextColor(readiness.tone)
 
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isRefreshing) {
+        if (isRefreshing) {
+            try {
+                onRefresh()
+                withFrameNanos { }
+            } finally {
+                isRefreshing = false
+            }
+        }
+    }
+
     PullToRefreshBox(
-        isRefreshing = false,
-        onRefresh = onRefresh,
+        isRefreshing = isRefreshing,
+        onRefresh = { isRefreshing = true },
         modifier = Modifier.fillMaxSize(),
     ) {
         Column(

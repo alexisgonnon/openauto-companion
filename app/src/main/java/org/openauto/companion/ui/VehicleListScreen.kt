@@ -28,6 +28,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,9 +59,22 @@ fun VehicleListScreen(
     val connectedVehiclePresent = vehicles.any { it.ssid == connectedSsid }
     val displayedVehicles = vehicles.sortedByDescending { it.ssid == connectedSsid }
 
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isRefreshing) {
+        if (isRefreshing) {
+            try {
+                onRefresh()
+                withFrameNanos { }
+            } finally {
+                isRefreshing = false
+            }
+        }
+    }
+
     PullToRefreshBox(
-        isRefreshing = false,
-        onRefresh = onRefresh,
+        isRefreshing = isRefreshing,
+        onRefresh = { isRefreshing = true },
         modifier = Modifier.fillMaxSize(),
     ) {
         Column(
