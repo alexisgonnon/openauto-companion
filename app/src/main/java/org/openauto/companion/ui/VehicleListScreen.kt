@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import org.openauto.companion.R
 import org.openauto.companion.data.Vehicle
 import org.openauto.companion.ui.theme.CockpitBlue
+import org.openauto.companion.ui.theme.CockpitBlueText
 import org.openauto.companion.ui.theme.CockpitMuted
 import org.openauto.companion.ui.theme.OpenAutoCompanionTheme
 
@@ -79,7 +81,7 @@ fun VehicleListScreen(
                     }
                     Spacer(Modifier.width(16.dp))
                     Column(
-                        modifier = Modifier.width(76.dp),
+                        modifier = Modifier.widthIn(min = 76.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Image(
@@ -93,7 +95,8 @@ fun VehicleListScreen(
                         Text(
                             text = "PRODIGY",
                             style = MaterialTheme.typography.labelSmall,
-                            color = CockpitBlue,
+                            color = CockpitBlueText,
+                            maxLines = 1,
                         )
                     }
                 }
