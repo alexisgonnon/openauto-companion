@@ -42,7 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.openauto.companion.ui.theme.CockpitMint
+import org.openauto.companion.ui.theme.CockpitBlue
 import org.openauto.companion.ui.theme.CockpitMuted
 import org.openauto.companion.ui.theme.OpenAutoCompanionTheme
 
@@ -235,7 +235,7 @@ private fun SharingRow(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ConnectionDot(if (active) CockpitMint else CockpitMuted, if (active) "$title active" else "$title inactive")
+        ConnectionDot(if (active) CockpitBlue else CockpitMuted, if (active) "$title active" else "$title inactive")
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
@@ -244,7 +244,7 @@ private fun SharingRow(
         Text(
             if (active) "ACTIVE" else inactiveLabel,
             style = MaterialTheme.typography.labelSmall,
-            color = if (active) CockpitMint else CockpitMuted,
+            color = if (active) CockpitBlue else CockpitMuted,
         )
     }
 }

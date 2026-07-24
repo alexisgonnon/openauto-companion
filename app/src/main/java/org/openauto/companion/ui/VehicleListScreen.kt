@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.openauto.companion.data.Vehicle
-import org.openauto.companion.ui.theme.CockpitMint
+import org.openauto.companion.ui.theme.CockpitBlue
 import org.openauto.companion.ui.theme.CockpitMuted
 import org.openauto.companion.ui.theme.OpenAutoCompanionTheme
 
@@ -58,7 +58,7 @@ fun VehicleListScreen(
                 Text(
                     text = "PRODIGY",
                     style = MaterialTheme.typography.labelSmall,
-                    color = CockpitMint,
+                    color = CockpitBlue,
                 )
                 Spacer(Modifier.height(12.dp))
                 Text("Your garage", style = MaterialTheme.typography.displayLarge)
@@ -110,9 +110,9 @@ private fun VehicleCard(
     ) {
         if (connected) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ConnectionDot(CockpitMint, "Connected")
+                ConnectionDot(CockpitBlue, "Connected")
                 Spacer(Modifier.width(10.dp))
-                Text("CONNECTED", style = MaterialTheme.typography.labelSmall, color = CockpitMint)
+                Text("CONNECTED", style = MaterialTheme.typography.labelSmall, color = CockpitBlue)
             }
             Spacer(Modifier.height(18.dp))
         }
@@ -132,7 +132,7 @@ private fun VehicleCard(
                 Text(
                     text = if (connected) "Data sharing active" else "Waiting for vehicle",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (connected) CockpitMint else CockpitMuted,
+                    color = if (connected) CockpitBlue else CockpitMuted,
                 )
             }
             Icon(

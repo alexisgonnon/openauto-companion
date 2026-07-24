@@ -50,7 +50,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.openauto.companion.ui.theme.CockpitMint
+import org.openauto.companion.ui.theme.CockpitBlue
 import org.openauto.companion.ui.theme.CockpitMuted
 import org.openauto.companion.ui.theme.OpenAutoCompanionTheme
 
@@ -278,13 +278,13 @@ private fun PairingQrIllustration(modifier: Modifier = Modifier) {
         val inset = size.minDimension * 0.1f
         fun finder(topLeft: Offset) {
             drawRect(
-                color = CockpitMint,
+                color = CockpitBlue,
                 topLeft = topLeft,
                 size = Size(side, side),
                 style = Stroke(width = stroke),
             )
             drawCircle(
-                color = CockpitMint,
+                color = CockpitBlue,
                 radius = side * 0.14f,
                 center = Offset(topLeft.x + side / 2f, topLeft.y + side / 2f),
             )
@@ -293,14 +293,14 @@ private fun PairingQrIllustration(modifier: Modifier = Modifier) {
         finder(Offset(size.width - inset - side, inset))
         finder(Offset(inset, size.height - inset - side))
         drawLine(
-            color = CockpitMint,
+            color = CockpitBlue,
             start = Offset(size.width * 0.55f, size.height * 0.65f),
             end = Offset(size.width * 0.78f, size.height * 0.65f),
             strokeWidth = stroke,
             cap = StrokeCap.Square,
         )
         drawLine(
-            color = CockpitMint,
+            color = CockpitBlue,
             start = Offset(size.width * 0.67f, size.height * 0.53f),
             end = Offset(size.width * 0.67f, size.height * 0.8f),
             strokeWidth = stroke,

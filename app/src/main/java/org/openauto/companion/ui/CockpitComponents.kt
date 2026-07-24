@@ -25,7 +25,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import org.openauto.companion.ui.theme.CockpitMint
+import org.openauto.companion.ui.theme.CockpitBlue
 import org.openauto.companion.ui.theme.CockpitMuted
 import org.openauto.companion.ui.theme.CockpitOutline
 import org.openauto.companion.ui.theme.CockpitSurface
@@ -121,7 +121,7 @@ fun ConnectionDot(
 
 @Composable
 fun toneColor(tone: UiTone): Color = when (tone) {
-    UiTone.Positive -> CockpitMint
+    UiTone.Positive -> CockpitBlue
     UiTone.Warning -> CockpitWarning
     UiTone.Neutral -> CockpitMuted
 }
