@@ -45,7 +45,7 @@ This work aligns with the project vision outcomes of predictable reconnection, c
 3. When a match is found, update `wifiNetwork` and `activeVehicle`, then request the Companion service for that vehicle.
 4. When no match is found, clear `wifiNetwork` and `activeVehicle` and stop the Companion service so stale connected state cannot remain visible.
 
-The service request will carry a manual-refresh flag only when `CompanionService.connected.value` is false. `CompanionService` will treat that flag as permission to bypass the same-identity/same-network live-generation reuse guard and begin a fresh runtime generation immediately, resetting retry backoff. When the service is already connected, refresh will use the normal idempotent start path and preserve the healthy generation.
+Every explicit pull will mark its service request as a manual refresh. `CompanionService` will evaluate that request against `_connected.value` on the service main thread: it bypasses the same-identity/same-network live-generation reuse guard only when the service is still disconnected, then begins a fresh runtime generation and resets retry backoff. If the service is connected when it handles the request, it uses the normal idempotent start path and preserves the healthy generation. This service-side decision removes the race between a monitor-side state read and intent handling.
 
 The existing network callbacks remain the automatic path. Pull-to-refresh is a deterministic user-triggered fallback.
 
@@ -73,8 +73,9 @@ Pull-to-refresh must remain reachable only when the scrollable content is at its
 
 - `MonitorSlotTest`: an existing monitor receives exactly one refresh and is neither stopped nor replaced.
 - `MonitorSlotTest`: refresh with an empty slot starts the provided monitor.
-- Runtime reuse decision test: a healthy same-vehicle generation is reused for an ordinary refresh request.
-- Runtime reuse decision test: a manual reconnect request while disconnected bypasses reuse and starts a fresh generation.
+- Runtime reconnect decision test: a refresh request received while connected does not force a new generation.
+- Runtime reconnect decision test: a refresh request received while disconnected forces a new generation.
+- Runtime reuse decision test: a forced reconnect bypasses reuse and starts a fresh generation.
 
 Tests will be written and observed failing before production changes.
 

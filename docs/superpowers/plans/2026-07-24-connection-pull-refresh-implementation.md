@@ -149,7 +149,7 @@ git commit -m "feat: add monitor refresh lifecycle"
 
 **Interfaces:**
 - Consumes: `MonitorLifecycle.refresh()`, `CompanionService.connected.value`, existing `WifiMonitor.checkCurrentNetwork()`, and generation token/cancellation safeguards.
-- Produces: `shouldReuseRuntimeGeneration(forceReconnect, sameVehicle, sameNetwork, runtimeActive)`, `WifiMonitor.refresh()`, and `CompanionService.EXTRA_FORCE_RECONNECT`.
+- Produces: `shouldForceRuntimeReconnect(refreshRequested, connected)`, `shouldReuseRuntimeGeneration(forceReconnect, sameVehicle, sameNetwork, runtimeActive)`, `WifiMonitor.refresh()`, and `CompanionService.EXTRA_FORCE_RECONNECT`.
 
 - [ ] **Step 1: Write failing runtime reuse policy tests**
 
@@ -163,6 +163,26 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RuntimeGenerationPolicyTest {
+    @Test
+    fun refreshRequestForConnectedRuntimeDoesNotForceReconnect() {
+        assertFalse(
+            shouldForceRuntimeReconnect(
+                refreshRequested = true,
+                connected = true,
+            )
+        )
+    }
+
+    @Test
+    fun refreshRequestForDisconnectedRuntimeForcesReconnect() {
+        assertTrue(
+            shouldForceRuntimeReconnect(
+                refreshRequested = true,
+                connected = false,
+            )
+        )
+    }
+
     @Test
     fun healthyMatchingRuntimeIsReused() {
         assertTrue(
@@ -204,7 +224,7 @@ Run:
 ./gradlew :app:testDebugUnitTest --tests org.openauto.companion.service.RuntimeGenerationPolicyTest
 ```
 
-Expected: compilation fails with unresolved `shouldReuseRuntimeGeneration`.
+Expected: compilation fails with unresolved `shouldForceRuntimeReconnect` and `shouldReuseRuntimeGeneration`.
 
 - [ ] **Step 3: Implement the pure reuse policy**
 
@@ -212,6 +232,11 @@ Create `RuntimeGenerationPolicy.kt`:
 
 ```kotlin
 package org.openauto.companion.service
+
+internal fun shouldForceRuntimeReconnect(
+    refreshRequested: Boolean,
+    connected: Boolean,
+): Boolean = refreshRequested && !connected
 
 internal fun shouldReuseRuntimeGeneration(
     forceReconnect: Boolean,
@@ -236,7 +261,11 @@ Expected: all three policy tests pass.
 In `CompanionService.onStartCommand()`, read:
 
 ```kotlin
-val forceReconnect = intent?.getBooleanExtra(EXTRA_FORCE_RECONNECT, false) == true
+val refreshRequested = intent?.getBooleanExtra(EXTRA_FORCE_RECONNECT, false) == true
+val forceReconnect = shouldForceRuntimeReconnect(
+    refreshRequested = refreshRequested,
+    connected = _connected.value,
+)
 ```
 
 Replace the inline same-runtime guard with:
@@ -276,7 +305,7 @@ Add:
 ```kotlin
 override fun refresh() {
     checkCurrentNetwork(
-        forceReconnect = !CompanionService.connected.value,
+        forceReconnect = true,
         clearWhenMissing = true,
     )
 }
