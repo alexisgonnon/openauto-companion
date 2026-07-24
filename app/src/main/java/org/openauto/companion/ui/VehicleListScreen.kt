@@ -22,9 +22,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,97 +41,105 @@ import org.openauto.companion.ui.theme.CockpitBlueText
 import org.openauto.companion.ui.theme.CockpitMuted
 import org.openauto.companion.ui.theme.OpenAutoCompanionTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VehicleListScreen(
     vehicles: List<Vehicle>,
     connectedSsid: String?,
+    onRefresh: () -> Unit,
     onVehicleTap: (Vehicle) -> Unit,
     onAddVehicle: () -> Unit,
 ) {
     val connectedVehiclePresent = vehicles.any { it.ssid == connectedSsid }
     val displayedVehicles = vehicles.sortedByDescending { it.ssid == connectedSsid }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(WindowInsets.safeDrawing.asPaddingValues())
-            .padding(horizontal = 22.dp),
+    PullToRefreshBox(
+        isRefreshing = false,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize(),
     ) {
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item {
-                Spacer(Modifier.height(24.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(top = 8.dp),
-                    ) {
-                        Text(
-                            text = "Your garage",
-                            style = MaterialTheme.typography.displayLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = garageSummary(vehicles.size, connectedVehiclePresent),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Spacer(Modifier.width(16.dp))
-                    Column(
-                        modifier = Modifier.widthIn(min = 76.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.prodigy_logo),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(60.dp)
-                                .clip(MaterialTheme.shapes.small),
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "PRODIGY",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = CockpitBlueText,
-                            maxLines = 1,
-                        )
-                    }
-                }
-                Spacer(Modifier.height(20.dp))
-            }
-
-            items(displayedVehicles, key = { it.id }) { vehicle ->
-                VehicleCard(
-                    vehicle = vehicle,
-                    connected = vehicle.ssid == connectedSsid,
-                    onClick = { onVehicleTap(vehicle) },
-                )
-            }
-
-            item { Spacer(Modifier.height(8.dp)) }
-        }
-
-        Button(
-            onClick = onAddVehicle,
-            enabled = vehicles.size < Vehicle.MAX_VEHICLES,
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 56.dp),
+                .fillMaxSize()
+                .padding(WindowInsets.safeDrawing.asPaddingValues())
+                .padding(horizontal = 22.dp),
         ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(10.dp))
-            Text("Add vehicle")
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item {
+                    Spacer(Modifier.height(24.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(top = 8.dp),
+                        ) {
+                            Text(
+                                text = "Your garage",
+                                style = MaterialTheme.typography.displayLarge,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = garageSummary(vehicles.size, connectedVehiclePresent),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Column(
+                            modifier = Modifier.widthIn(min = 76.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.prodigy_logo),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(MaterialTheme.shapes.small),
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "PRODIGY",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = CockpitBlueText,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(20.dp))
+                }
+
+                items(displayedVehicles, key = { it.id }) { vehicle ->
+                    VehicleCard(
+                        vehicle = vehicle,
+                        connected = vehicle.ssid == connectedSsid,
+                        onClick = { onVehicleTap(vehicle) },
+                    )
+                }
+
+                item { Spacer(Modifier.height(8.dp)) }
+            }
+
+            Button(
+                onClick = onAddVehicle,
+                enabled = vehicles.size < Vehicle.MAX_VEHICLES,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp),
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                Text("Add vehicle")
+            }
+            Spacer(Modifier.height(18.dp))
         }
-        Spacer(Modifier.height(18.dp))
     }
 }
 
@@ -207,6 +217,7 @@ private fun GarageConnectedPreview() {
         VehicleListScreen(
             vehicles = previewVehicles(),
             connectedSsid = "Prodigy_e57d",
+            onRefresh = {},
             onVehicleTap = {},
             onAddVehicle = {},
         )
@@ -220,6 +231,7 @@ private fun GarageEmptyPreview() {
         VehicleListScreen(
             vehicles = emptyList(),
             connectedSsid = null,
+            onRefresh = {},
             onVehicleTap = {},
             onAddVehicle = {},
         )

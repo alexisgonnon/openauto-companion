@@ -65,6 +65,10 @@ class MainActivity : ComponentActivity() {
                 val connectedVehicleId by CompanionService.vehicleId.collectAsStateWithLifecycle()
                 val connectionIssue by CompanionService.connectionIssue.collectAsStateWithLifecycle()
 
+                val refreshConnection: () -> Unit = {
+                    (application as CompanionApp).refreshWifiMonitor(prefs.vehicles)
+                }
+
                 var showPairingSuccess by remember { mutableStateOf<String?>(null) }
                 var pairingState by remember { mutableStateOf<PairingUiState>(PairingUiState.Idle) }
 
@@ -142,6 +146,7 @@ class MainActivity : ComponentActivity() {
                         VehicleListScreen(
                             vehicles = vehicles,
                             connectedSsid = connectedSsid,
+                            onRefresh = refreshConnection,
                             onVehicleTap = { screen = Screen.Status(it) },
                             onAddVehicle = {
                                 pairingState = PairingUiState.Idle
@@ -220,6 +225,7 @@ class MainActivity : ComponentActivity() {
 
                         StatusScreen(
                             vehicleName = vehicle.name,
+                            onRefresh = refreshConnection,
                             status = status,
                             socks5Enabled = socks5Enabled,
                             onSocks5Toggle = {

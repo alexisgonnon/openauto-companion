@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -30,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +61,7 @@ data class CompanionStatus(
     val ssid: String = "",
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatusScreen(
     vehicleName: String,
@@ -71,6 +74,7 @@ fun StatusScreen(
     onOpenThemeBuilder: () -> Unit,
     onUnpair: () -> Unit,
     onBack: () -> Unit,
+    onRefresh: () -> Unit,
 ) {
     var showMenu by rememberSaveable { mutableStateOf(false) }
     var showUnpairDialog by rememberSaveable { mutableStateOf(false) }
@@ -78,132 +82,138 @@ fun StatusScreen(
     val readinessAccentColor = toneColor(readiness.tone)
     val readinessTextColor = toneTextColor(readiness.tone)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(WindowInsets.safeDrawing.asPaddingValues())
-            .padding(horizontal = 22.dp),
+    PullToRefreshBox(
+        isRefreshing = false,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize(),
     ) {
-        CockpitTopBar(
-            title = vehicleName,
-            onBack = onBack,
-            actions = {
-                Box {
-                    IconButton(onClick = { showMenu = true }, modifier = Modifier.size(48.dp)) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Vehicle menu")
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(WindowInsets.safeDrawing.asPaddingValues())
+                .padding(horizontal = 22.dp),
+        ) {
+            CockpitTopBar(
+                title = vehicleName,
+                onBack = onBack,
+                actions = {
+                    Box {
+                        IconButton(onClick = { showMenu = true }, modifier = Modifier.size(48.dp)) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Vehicle menu")
+                        }
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Unpair vehicle") },
+                                onClick = {
+                                    showMenu = false
+                                    showUnpairDialog = true
+                                },
+                            )
+                        }
                     }
-                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                        DropdownMenuItem(
-                            text = { Text("Unpair vehicle") },
-                            onClick = {
-                                showMenu = false
-                                showUnpairDialog = true
-                            },
+                },
+            )
+            Spacer(Modifier.height(12.dp))
+
+            CockpitCard(modifier = Modifier.fillMaxWidth(), highlighted = true) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ConnectionDot(readinessAccentColor, readiness.title)
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(readiness.title, style = MaterialTheme.typography.headlineLarge, color = readinessTextColor)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            readiness.detail,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
-            },
-        )
-        Spacer(Modifier.height(12.dp))
-
-        CockpitCard(modifier = Modifier.fillMaxWidth(), highlighted = true) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                ConnectionDot(readinessAccentColor, readiness.title)
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(readiness.title, style = MaterialTheme.typography.headlineLarge, color = readinessTextColor)
-                    Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(20.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
-                        readiness.detail,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = status.ssid,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = CockpitMuted,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        when (readiness.tone) {
+                            UiTone.Positive -> "CONNECTED"
+                            UiTone.Warning -> "ATTENTION"
+                            UiTone.Neutral -> "WAITING"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = readinessTextColor,
                     )
                 }
             }
-            Spacer(Modifier.height(20.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = status.ssid,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = CockpitMuted,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+
+            ProdigySectionLabel("Sharing", modifier = Modifier.padding(top = 28.dp, bottom = 10.dp))
+            CockpitCard(modifier = Modifier.fillMaxWidth()) {
+                SharingRow(
+                    title = "Vehicle data",
+                    detail = "Time · GPS · Battery",
+                    active = vehicleDataActive(status),
+                    inactiveLabel = "WAITING",
                 )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    when (readiness.tone) {
-                        UiTone.Positive -> "CONNECTED"
-                        UiTone.Warning -> "ATTENTION"
-                        UiTone.Neutral -> "WAITING"
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = readinessTextColor,
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 14.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
+                SharingRow(
+                    title = "Internet bridge",
+                    detail = "SOCKS5 sharing",
+                    active = internetBridgeActive(status),
+                    inactiveLabel = if (status.connected) "OFF" else "WAITING",
                 )
             }
-        }
 
-        ProdigySectionLabel("Sharing", modifier = Modifier.padding(top = 28.dp, bottom = 10.dp))
-        CockpitCard(modifier = Modifier.fillMaxWidth()) {
-            SharingRow(
-                title = "Vehicle data",
-                detail = "Time · GPS · Battery",
-                active = vehicleDataActive(status),
-                inactiveLabel = "WAITING",
-            )
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 14.dp),
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
-            SharingRow(
-                title = "Internet bridge",
-                detail = "SOCKS5 sharing",
-                active = internetBridgeActive(status),
-                inactiveLabel = if (status.connected) "OFF" else "WAITING",
-            )
-        }
+            ProdigySectionLabel("Quick actions", modifier = Modifier.padding(top = 28.dp, bottom = 10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                QuickActionCard(
+                    label = "Head unit",
+                    enabled = status.headUnitAvailable,
+                    onClick = onOpenSettingsPage,
+                    modifier = Modifier.weight(1f),
+                )
+                QuickActionCard(
+                    label = "Appearance",
+                    enabled = status.headUnitAvailable,
+                    onClick = onOpenThemeBuilder,
+                    modifier = Modifier.weight(1f),
+                )
+            }
 
-        ProdigySectionLabel("Quick actions", modifier = Modifier.padding(top = 28.dp, bottom = 10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            QuickActionCard(
-                label = "Head unit",
-                enabled = status.headUnitAvailable,
-                onClick = onOpenSettingsPage,
-                modifier = Modifier.weight(1f),
-            )
-            QuickActionCard(
-                label = "Appearance",
-                enabled = status.headUnitAvailable,
-                onClick = onOpenThemeBuilder,
-                modifier = Modifier.weight(1f),
-            )
+            ProdigySectionLabel("Vehicle options", modifier = Modifier.padding(top = 28.dp, bottom = 10.dp))
+            CockpitCard(modifier = Modifier.fillMaxWidth()) {
+                OptionRow(
+                    title = "Internet sharing",
+                    detail = "Share phone data through SOCKS5",
+                    checked = socks5Enabled,
+                    onCheckedChange = onSocks5Toggle,
+                )
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 10.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
+                OptionRow(
+                    title = "Audio keep-alive",
+                    detail = "Play silence to keep AA audio open",
+                    checked = audioKeepAlive,
+                    onCheckedChange = onAudioKeepAliveToggle,
+                )
+            }
+            Spacer(Modifier.height(28.dp))
         }
-
-        ProdigySectionLabel("Vehicle options", modifier = Modifier.padding(top = 28.dp, bottom = 10.dp))
-        CockpitCard(modifier = Modifier.fillMaxWidth()) {
-            OptionRow(
-                title = "Internet sharing",
-                detail = "Share phone data through SOCKS5",
-                checked = socks5Enabled,
-                onCheckedChange = onSocks5Toggle,
-            )
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 10.dp),
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
-            OptionRow(
-                title = "Audio keep-alive",
-                detail = "Play silence to keep AA audio open",
-                checked = audioKeepAlive,
-                onCheckedChange = onAudioKeepAliveToggle,
-            )
-        }
-        Spacer(Modifier.height(28.dp))
     }
 
     if (showUnpairDialog) {
@@ -310,6 +320,7 @@ private fun PreviewStatusScreen(status: CompanionStatus) {
             onOpenThemeBuilder = {},
             onUnpair = {},
             onBack = {},
+            onRefresh = {},
         )
     }
 }
