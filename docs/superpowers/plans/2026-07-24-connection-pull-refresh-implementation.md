@@ -402,14 +402,33 @@ Import:
 ```kotlin
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 ```
 
 Add `onRefresh: () -> Unit` to the screen signature, annotate the composable with `@OptIn(ExperimentalMaterial3Api::class)`, and wrap the current root `Column`:
 
 ```kotlin
+var isRefreshing by remember { mutableStateOf(false) }
+
+LaunchedEffect(isRefreshing) {
+    if (isRefreshing) {
+        try {
+            onRefresh()
+            withFrameNanos { }
+        } finally {
+            isRefreshing = false
+        }
+    }
+}
+
 PullToRefreshBox(
-    isRefreshing = false,
-    onRefresh = onRefresh,
+    isRefreshing = isRefreshing,
+    onRefresh = { isRefreshing = true },
     modifier = Modifier.fillMaxSize(),
 ) {
     Column(
@@ -425,16 +444,29 @@ PullToRefreshBox(
 
 Update both Garage previews with `onRefresh = {}`.
 
-`isRefreshing = false` is intentional: the Material state still renders pull distance and invokes `onRefresh`, then retracts after dispatch. Connection success remains driven by service flows rather than a synthetic spinner timeout.
+The controlled `isRefreshing` state is intentional. Device verification against Material 3 1.3.1 showed that a threshold-triggered pull remains at the indicator threshold when the value is permanently `false`; the pinned implementation hides only after observing a real `true` to `false` transition. `LaunchedEffect` dispatches reconciliation once after the `true` state is applied, holds it through one Compose frame, and clears it in `finally`. This is frame synchronization rather than an arbitrary timeout. Connection success remains driven by service flows.
 
 - [ ] **Step 3: Wrap Vehicle Status in Material pull-to-refresh**
 
 Use the same imports and opt-in. Add `onRefresh: () -> Unit` to the signature and wrap the existing scrollable `Column`:
 
 ```kotlin
+var isRefreshing by remember { mutableStateOf(false) }
+
+LaunchedEffect(isRefreshing) {
+    if (isRefreshing) {
+        try {
+            onRefresh()
+            withFrameNanos { }
+        } finally {
+            isRefreshing = false
+        }
+    }
+}
+
 PullToRefreshBox(
-    isRefreshing = false,
-    onRefresh = onRefresh,
+    isRefreshing = isRefreshing,
+    onRefresh = { isRefreshing = true },
     modifier = Modifier.fillMaxSize(),
 ) {
     Column(

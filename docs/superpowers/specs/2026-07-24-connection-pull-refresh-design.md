@@ -55,7 +55,7 @@ The existing network callbacks remain the automatic path. Pull-to-refresh is a d
 
 `MainActivity` will provide one callback that invokes `CompanionApp.refreshWifiMonitor(prefs.vehicles)`. Both screens will use that callback.
 
-The standard pull indicator will communicate gesture progress and retract after the reconciliation request is dispatched. It does not imply connection success. Existing service flows remain the only source for `CONNECTED`, `Ready`, `Waiting`, sharing-active states, and error copy.
+The standard pull indicator will communicate gesture progress and retract after the reconciliation request is dispatched. Material 3 1.3.1 requires the app to expose a controlled `false` to `true` to `false` refresh transition; the UI holds `true` through one applied Compose frame after synchronous reconciliation, without using an arbitrary timeout. It does not imply connection success. Existing service flows remain the only source for `CONNECTED`, `Ready`, `Waiting`, sharing-active states, and error copy.
 
 Pull-to-refresh must remain reachable only when the scrollable content is at its top, preserving normal vertical scrolling and taps.
 
