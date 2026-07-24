@@ -39,7 +39,7 @@ Governance: capture new ideas in `docs/wishlist.md`; only promoted items should 
     requiring the AA Wi-Fi network to become Android's default route.
 - Verify recent connection reliability fixes on-device.
   - Rationale: latest behavior change included Wi-Fi socket fallback (`EPERM`) and should be validated in real network conditions.
-  - Outcome: confidence that fallback path and reconnect logic behave as expected across devices.
+  - Outcome: Garage and Vehicle Status user-triggered current-network reconciliation is live-validated on-device; automatic Android callback reliability remains under observation.
 - Operate from the Superpowers-native management loop docs.
   - Rationale: continuity across sessions is now a core workflow requirement.
   - Outcome: all behavior-changing sessions use Superpowers plus repo docs and
