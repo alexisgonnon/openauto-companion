@@ -1071,3 +1071,20 @@ Non-behavior work (formatting, docs-only edits, no-op refactors) does not requir
   1. Rerun Claude Fable on `dev...HEAD`.
   2. Publish, open the PR against `dev`, and merge only after explicit `SIGN_OFF`.
   3. Field-test connected and disconnected refresh behavior plus Android Auto playback continuity.
+
+
+## 2026-07-24 — dev-to-main promotion reconciliation
+
+- **What changed:** Merged current `origin/main` into `dev` before promotion. Resolved the Pairing and Garage conflicts by retaining the Calm Cockpit UI while integrating the main versioned 24-character pairing-code validation, formatting, and canonical submission. Retained the main confirmed vehicle-removal flow in Garage, including persisted vehicle/credential removal and monitor restart. Preserved the append-only handoff records from both branches.
+- **Why:** `dev` was 33 commits ahead of `main` but 10 commits behind it. A direct promotion conflicted with the secure-pairing upgrade in `PairingScreen.kt`, `VehicleListScreen.kt`, and this handoff file.
+- **Status:** Reconciliation complete and verified locally; no roadmap resequencing. The `dev` to `main` promotion PR is the next action.
+- **Next steps:**
+  1. Commit and push the reconciled `dev` merge.
+  2. Open a ready PR from `dev` into `main`.
+  3. Review/merge the promotion through the normal GitHub workflow.
+- **Verification:**
+  - Focused secure pairing UI compile/test initially exposed the obsolete six-digit PIN helper collision; removing that superseded helper made `PairingScreenTest` pass.
+  - `git diff --cached --check` -> PASS.
+  - `./gradlew :app:testDebugUnitTest :app:assembleDebug` -> PASS (`BUILD SUCCESSFUL`; 192 tests, zero failures/errors/skips).
+  - Debug APK SHA-256: `a9830b991b2babbace9117c731ffad2479dfd12d2f39dc5989c86fa062231e4f`.
+  - Live Pixel/Android Auto validation was not repeated for this branch reconciliation.

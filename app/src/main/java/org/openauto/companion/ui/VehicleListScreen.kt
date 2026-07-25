@@ -20,12 +20,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +59,7 @@ fun VehicleListScreen(
     onRefresh: () -> Unit,
     onVehicleTap: (Vehicle) -> Unit,
     onAddVehicle: () -> Unit,
+    onRemoveVehicle: (Vehicle) -> Unit,
 ) {
     val connectedVehiclePresent = vehicles.any { it.ssid == connectedSsid }
     val displayedVehicles = vehicles.sortedByDescending { it.ssid == connectedSsid }
@@ -140,6 +145,7 @@ fun VehicleListScreen(
                         vehicle = vehicle,
                         connected = vehicle.ssid == connectedSsid,
                         onClick = { onVehicleTap(vehicle) },
+                        onRemove = { onRemoveVehicle(vehicle) },
                     )
                 }
 
@@ -167,7 +173,10 @@ private fun VehicleCard(
     vehicle: Vehicle,
     connected: Boolean,
     onClick: () -> Unit,
+    onRemove: () -> Unit,
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     CockpitCard(
         modifier = Modifier.fillMaxWidth(),
         highlighted = connected,
@@ -200,12 +209,37 @@ private fun VehicleCard(
                     color = if (connected) CockpitBlueText else CockpitMuted,
                 )
             }
+            IconButton(onClick = { showDeleteDialog = true }) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Remove vehicle",
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            }
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Remove " + vehicle.name + "?") },
+            text = { Text("This will unpair this vehicle. You can re-pair later with a new pairing code.") },
+            confirmButton = {
+                TextButton(onClick = { showDeleteDialog = false; onRemove() }) {
+                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                CockpitTextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            },
+        )
     }
 }
 
@@ -239,6 +273,7 @@ private fun GarageConnectedPreview() {
             onRefresh = {},
             onVehicleTap = {},
             onAddVehicle = {},
+            onRemoveVehicle = {},
         )
     }
 }
@@ -253,6 +288,7 @@ private fun GarageEmptyPreview() {
             onRefresh = {},
             onVehicleTap = {},
             onAddVehicle = {},
+            onRemoveVehicle = {},
         )
     }
 }

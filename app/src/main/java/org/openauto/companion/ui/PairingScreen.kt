@@ -46,9 +46,11 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.openauto.companion.net.api.PairingCode
 import org.openauto.companion.ui.theme.CockpitBlue
 import org.openauto.companion.ui.theme.CockpitMuted
 import org.openauto.companion.ui.theme.OpenAutoCompanionTheme
@@ -59,20 +61,29 @@ sealed interface PairingUiState {
     data class Failed(val message: String) : PairingUiState
 }
 
+internal fun canSubmitManualPairing(
+    ssid: String,
+    pairingCodeInput: String,
+    pairingInProgress: Boolean,
+): Boolean = !pairingInProgress &&
+    ssid.trim().isNotEmpty() &&
+    PairingCode.normalize(pairingCodeInput) != null
+
 @Composable
 fun PairingScreen(
     suggestedSsid: String = "",
     state: PairingUiState,
-    onPair: (ssid: String, name: String, pin: String) -> Unit,
+    onPair: (ssid: String, name: String, pairingCode: String) -> Unit,
     onScanQr: () -> Unit,
     onCancel: (() -> Unit)? = null,
     manualExpandedInitially: Boolean = false,
 ) {
     var ssid by rememberSaveable { mutableStateOf(suggestedSsid) }
     var name by rememberSaveable { mutableStateOf("") }
-    var pin by rememberSaveable { mutableStateOf("") }
+    var pairingCodeInput by rememberSaveable { mutableStateOf("") }
     var manualExpanded by rememberSaveable { mutableStateOf(manualExpandedInitially) }
     val pairing = state is PairingUiState.Pairing
+    val canonicalPairingCode = PairingCode.normalize(pairingCodeInput)
 
     Column(
         modifier = Modifier
@@ -169,7 +180,7 @@ fun PairingScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Can't scan?", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "Enter Wi-Fi and pairing PIN manually",
+                        "Enter Wi-Fi and pairing code manually",
                         style = MaterialTheme.typography.bodyMedium,
                         color = CockpitMuted,
                     )
@@ -207,12 +218,16 @@ fun PairingScreen(
                 )
                 Spacer(Modifier.height(14.dp))
                 OutlinedTextField(
-                    value = pin,
-                    onValueChange = { value ->
-                        if (value.length <= 6 && value.all(Char::isDigit)) pin = value
+                    value = pairingCodeInput,
+                    onValueChange = { input ->
+                        PairingCode.formatInput(input)?.let { pairingCodeInput = it }
                     },
-                    label = { Text("Six-digit PIN") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    label = { Text("Pairing code") },
+                    placeholder = { Text("XXXX-XXXX-XXXX-XXXX-XXXX-XXXX") },
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Characters,
+                        keyboardType = KeyboardType.Ascii,
+                    ),
                     singleLine = true,
                     enabled = !pairing,
                     modifier = Modifier.fillMaxWidth(),
@@ -232,10 +247,10 @@ fun PairingScreen(
                             onPair(
                                 ssid.trim(),
                                 name.trim().ifEmpty { ssid.trim() },
-                                pin,
+                                checkNotNull(canonicalPairingCode),
                             )
                         },
-                        enabled = canSubmitManualPairing(ssid, pin, pairing),
+                        enabled = canSubmitManualPairing(ssid, pairingCodeInput, pairing),
                     ) {
                         if (pairing) {
                             CircularProgressIndicator(

@@ -25,10 +25,3 @@ internal fun vehicleDataActive(status: CompanionStatus): Boolean = status.connec
 
 internal fun internetBridgeActive(status: CompanionStatus): Boolean =
     status.connected && status.socks5Active
-
-internal fun canSubmitManualPairing(
-    ssid: String,
-    pin: String,
-    pairingInProgress: Boolean,
-): Boolean =
-    !pairingInProgress && ssid.trim().isNotEmpty() && pin.length == 6 && pin.all(Char::isDigit)

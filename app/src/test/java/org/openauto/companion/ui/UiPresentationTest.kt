@@ -50,14 +50,4 @@ class UiPresentationTest {
         assertTrue(vehicleDataActive(connectedWithoutSocks))
         assertFalse(internetBridgeActive(connectedWithoutSocks))
     }
-
-    @Test fun `manual pairing requires ssid six digits and idle state`() {
-        assertTrue(canSubmitManualPairing("Prodigy", "123456", false))
-        assertFalse(canSubmitManualPairing("", "123456", false))
-        assertFalse(canSubmitManualPairing("   ", "123456", false))
-        assertFalse(canSubmitManualPairing("Prodigy", "12345", false))
-        assertFalse(canSubmitManualPairing("Prodigy", "12345x", false))
-        assertFalse(canSubmitManualPairing("Prodigy", "1234567", false))
-        assertFalse(canSubmitManualPairing("Prodigy", "123456", true))
-    }
 }
