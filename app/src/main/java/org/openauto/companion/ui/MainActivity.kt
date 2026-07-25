@@ -13,7 +13,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.runtime.*
@@ -33,6 +32,7 @@ import org.openauto.companion.net.api.ApiPairingCredentialStore
 import org.openauto.companion.net.api.ApiPairingDraft
 import org.openauto.companion.service.CompanionService
 import org.openauto.companion.service.VehicleIdentity
+import org.openauto.companion.ui.theme.OpenAutoCompanionTheme
 
 class MainActivity : ComponentActivity() {
     private lateinit var prefs: CompanionPrefs
@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
         requestPermissions()
 
         setContent {
-            MaterialTheme {
+            OpenAutoCompanionTheme {
                 var vehicles by remember { mutableStateOf(prefs.vehicles) }
                 var screen by remember { mutableStateOf<Screen>(
                     if (vehicles.isEmpty()) Screen.Pairing else Screen.VehicleList
@@ -64,6 +64,10 @@ class MainActivity : ComponentActivity() {
                 val connectedVehicleName by CompanionService.vehicleName.collectAsStateWithLifecycle()
                 val connectedVehicleId by CompanionService.vehicleId.collectAsStateWithLifecycle()
                 val connectionIssue by CompanionService.connectionIssue.collectAsStateWithLifecycle()
+
+                val refreshConnection: () -> Unit = {
+                    (application as CompanionApp).refreshWifiMonitor(prefs.vehicles)
+                }
 
                 var showPairingSuccess by remember { mutableStateOf<String?>(null) }
                 var pairingState by remember { mutableStateOf<PairingUiState>(PairingUiState.Idle) }
@@ -130,7 +134,7 @@ class MainActivity : ComponentActivity() {
                         title = { Text("Pairing Successful") },
                         text = { Text("Vehicle \"$ssid\" has been paired. The app will connect automatically when in range.") },
                         confirmButton = {
-                            TextButton(onClick = { showPairingSuccess = null }) {
+                            CockpitTextButton(onClick = { showPairingSuccess = null }) {
                                 Text("OK")
                             }
                         }
@@ -142,6 +146,7 @@ class MainActivity : ComponentActivity() {
                         VehicleListScreen(
                             vehicles = vehicles,
                             connectedSsid = connectedSsid,
+                            onRefresh = refreshConnection,
                             onVehicleTap = { screen = Screen.Status(it) },
                             onAddVehicle = {
                                 pairingState = PairingUiState.Idle
@@ -151,7 +156,7 @@ class MainActivity : ComponentActivity() {
                                 prefs.removeVehicle(vehicle.id)
                                 vehicles = prefs.vehicles
                                 restartMonitoring()
-                            }
+                            },
                         )
                     }
                     is Screen.Pairing -> {
@@ -225,6 +230,7 @@ class MainActivity : ComponentActivity() {
 
                         StatusScreen(
                             vehicleName = vehicle.name,
+                            onRefresh = refreshConnection,
                             status = status,
                             socks5Enabled = socks5Enabled,
                             onSocks5Toggle = {

@@ -1047,3 +1047,87 @@ Non-behavior work (formatting, docs-only edits, no-op refactors) does not requir
   - AA stream continuity: the airplane cycle necessarily interrupted the
     transport; AA reconnected automatically and the `:5277` session was
     established after recovery.
+
+## 2026-07-23 14:17 (local)
+
+- What changed:
+  - Added the approved Calm Cockpit dark design system, shared cockpit components, and pure presentation mapping.
+  - Refreshed Garage, Vehicle Status, Pairing, and QR Scanner with explicit state copy, QR-first pairing, safe insets, responsive scrolling, previews, and accessibility semantics.
+  - Added seven JVM presentation-rule tests and documented the approved design and implementation plan.
+- Why:
+  - Promote the `UI polish pass` wishlist item into a coherent, low-glare companion experience without changing networking, pairing protocol, persistence, or service behavior.
+- Status: implementation complete and independently reviewed with no code blockers; unlocked-device visual and tap-through QA remains pending.
+- Dependency decision:
+  - Companion-only: Yes.
+- Wishlist promotion:
+  - Source item: `UI polish pass`.
+  - Promotion result: promoted from Later into the active roadmap, pending final device inspection.
+- Next steps:
+  - 1) Unlock Pixel `39260DLJH000LX` and inspect Garage, Vehicle Status, QR-first/manual Pairing, and Scanner permission/error states.
+  - 2) Confirm scroll reachability and system-bar treatment on the device, then move the roadmap item to Recently Completed.
+  - 3) Merge or publish `codex/ui-refresh` after the visual pass is accepted.
+- Verification:
+  - `git diff --check` -> PASS.
+  - `./gradlew :app:testDebugUnitTest :app:assembleDebug` -> PASS (`BUILD SUCCESSFUL`; 173 unit tests, zero failures).
+  - Focused scanner gate after the accessibility review fix -> PASS.
+  - Independent final implementation review -> approved; no code blockers.
+  - Debug APK install on Pixel `39260DLJH000LX` -> PASS.
+  - Pixel screenshot/tap-through -> PENDING because the attached phone remained securely locked; no credential bypass was attempted.
+  - Android Auto continuity -> not exercised; runtime lifecycle and networking behavior were intentionally untouched.
+
+
+## 2026-07-24 15:40 CDT — Prodigy branding refinement
+
+- **What changed:** Refined the Prodigy Companion branding from design commit `384ad04`. Applied the approved brand-blue theme tokens, updated the Garage header to the approved star-right/`PRODIGY`-below composition, and added accessible foreground treatment through `CockpitBlueText` `#8D8AFF`, a shared `CockpitTextButton`, separate status accent/text tone mappings, and an explicit on-background Garage heading. The logo lockup retains `widthIn(min = 76.dp)` and `maxLines = 1` to prevent clipping.
+- **Why:** Continue the active UI-polish work by making Prodigy branding consistent, legible, and aligned with the approved visual specification.
+- **Status:** Implementation, automated verification, APK installation, and the targeted Garage on-device visual pass are complete. The broader Status/Pairing/Scanner tap-through and Android Auto continuity remain unexercised. Companion-only: **Yes**. This is a continuation of the active UI-polish work with no roadmap resequencing. Review of the eight changed `app/src/main` files found UI rendering changes limited to presentation tokens, direct visual consumers, accessible text-button styling, and Garage-header composition, with no business logic, navigation, data flow, callback, persistence, protocol, or service changes.
+- **Verification:** `git diff --check` passed. The legacy-color search found no `CockpitMint`, `CockpitOnMint`, or legacy mint hex values under `app/src/main`. Final `./gradlew :app:testDebugUnitTest :app:assembleDebug` completed successfully in 25 seconds. Aggregate XML results: 173 tests, 0 failures, 0 errors, and 0 skipped. Independent review found no remaining Critical or Important issues after the text-contrast fixes. The final debug APK was generated at `/mnt/e/claude/personal/openautopro/openauto-companion/app/build/outputs/apk/debug/app-debug.apk` with size 37M and SHA-256 `3b4a8955622c8ddd85b789db95ad8052b541267bd936baa880c45585c323bfb4`. Windows SDK ADB detected Pixel 8 `39260DLJH000LX`; the final `adb install -r` returned `Success`, the device reported `mIsShowing=false`, and a post-splash Garage capture confirmed the white heading, blue star tile, `PRODIGY` label placement, readable summary/card copy, and no visible clipping. Local screenshot evidence is stored in the gitignored `.superpowers/brainstorm/openauto-garage-final.png`. Android Auto continuity was not exercised because this change was presentation-only.
+- **Next steps:**
+  1. Field-test the attached debug APK during normal phone use.
+  2. Complete the broader Status, Pairing, and Scanner tap-through when convenient.
+  3. Merge or publish `codex/ui-refresh` after acceptance.
+
+## 2026-07-24 — User-triggered connection reconciliation
+
+- **Branch/commits:** `codex/ui-refresh`; design `4d1a528`, plan `e63f503`, lifecycle `0194c29`, service-decision plan correction `7abded1`, reconciliation `38cedfd`, UI `b186b41`, indicator plan correction `0767f22`, indicator fix `0188d61`.
+- **What changed:** Added a default no-op `MonitorLifecycle.refresh`, `MonitorSlot.refreshOrStart`, and a `CompanionApp` refresh seam. `WifiMonitor` now explicitly reconciles the current network through `ConnectivityManager` with a `WifiManager` fallback: no match clears connection state and stops a stale service, while a match sends a force-aware request. `CompanionService` evaluates live `_connected.value` on the main thread, reuses a healthy runtime, and cancels/restarts a still-disconnected matching generation at attempt zero. Garage and Vehicle Status now use `PullToRefreshBox` with the shared refresh callback. Pure service-decision policy tests cover runtime reuse/restart behavior.
+- **Why/root cause:** The application-owned `WifiMonitor` scanned current networks when created and then relied indefinitely on Android callbacks. Reopening the Activity rebuilt and rescanned the monitor, masking missed callbacks or stale service state.
+- **Status/decision:** Companion-only implementation; no server, firmware, or protocol change is required. Garage and Vehicle Status user-triggered reconciliation is implemented and live-validated. Automatic Android callback reliability remains under observation; pull-to-refresh is now the deterministic fallback.
+- **RED/GREEN evidence:** Initial `MonitorSlot` tests failed on unresolved `refreshOrStart`/`refresh`; service policy tests failed on unresolved `shouldForceRuntimeReconnect`/`shouldReuseRuntimeGeneration`. Focused suites passed after implementation, followed by the full suite. On-device indicator RED showed both pulls fired and preserved the connection, but Material3 `1.3.1` left `ProgressBar` at `[520,137][562,179]` for more than 30 seconds because refreshing was permanently false. The corrected, independently approved implementation uses local false→true→false controlled state, invokes synchronous `onRefresh` from `LaunchedEffect`, waits one frame with `withFrameNanos`, and clears state in `finally`; it adds no arbitrary millisecond delay.
+- **Verification:** `./gradlew :app:testDebugUnitTest :app:assembleDebug` completed `BUILD SUCCESSFUL` in 12s with 180 tests and 0 failures. `git diff --check` and static-link checks were clean.
+- **APK/install:** `/mnt/e/claude/personal/openautopro/openauto-companion/app/build/outputs/apk/debug/app-debug.apk` (`37M`), SHA-256 `7a704d977dbbc905c9c3c4522b53f7a5f3c7ae3c92b79103feeea88afd880558`. Pixel `39260DLJH000LX` was listed, and the final `install -r` returned `Success`.
+- **Device observations:** Garage pre/post hierarchy remained `1 vehicle · connected now` and `CONNECTED`; after settling, no `ProgressBar` remained. At `17:21:14`, logs showed the current-network fallback resolving SSID `Prodigy_e57d` and matching the vehicle. Vehicle Status pre/post hierarchy remained `Ready`, `Connected · sharing normally`, and `CONNECTED`; after settling, no `ProgressBar` remained. At `17:22:05`, logs showed the same successful reconciliation. No `Ready` → `Waiting` transition was observed.
+- **Limits:** The healthy AA/runtime was intentionally not interrupted. The live disconnected path was not exercised because toggling Wi-Fi could interrupt active AA; unit policy tests cover that decision path only. AA continuity was not independently observed through stream playback, although no deliberate transport disruption occurred and healthy connection state remained.
+- **Next steps:**
+  1. Field-test a naturally missed/lost callback and pull-to-refresh without closing the app.
+  2. Validate the live disconnected retry path when no active AA session is at risk.
+  3. Continue observing automatic callback reliability and consider targeted instrumentation.
+
+## 2026-07-24 — Fable connection-review fixes
+
+- **Review/fixes:** Claude Fable initially returned `CHANGES_REQUIRED` because the retained Wi-Fi monitor could replay a stale per-vehicle configuration snapshot and because unreadable/redacted SSID evidence was treated as confirmed network absence. Commits `e73b2a6` and `26b8dc9` now atomically replace the runtime vehicle catalog with current settings before refresh, and preserve a healthy connected runtime when Wi-Fi evidence is indeterminate. Explicit refresh still clears on confirmed absence or when already disconnected.
+- **Scope/status:** Companion-only; no roadmap resequencing. Publication remains gated on a new Fable `SIGN_OFF`.
+- **RED/GREEN evidence:** Slot/catalog tests failed RED before the update seams existed, and the reconciliation-policy test failed RED before production policy existed. Focused regressions then passed GREEN. The final `./gradlew :app:testDebugUnitTest :app:assembleDebug` gate returned `BUILD SUCCESSFUL` with 188 tests and zero failures.
+- **APK/device:** `/mnt/e/claude/personal/openautopro/openauto-companion/app/build/outputs/apk/debug/app-debug.apk` (`37M`), SHA-256 `87ad33419ec651c390a7dde1f97b1b219ae235fbf2ac941a7211ea68dbba5b67`. Pixel `39260DLJH000LX` installation returned `Success`. Final logs at 18:17:28 showed ConnectivityManager `ssid=null`, the fallback matching `Prodigy_e57d`, and the SOCKS listener starting.
+- **Limits:** The phone remained securely locked, so the final-build Garage/Status pull rerun is pending; the previous build connected pulls passed. The live disconnected path and Android Auto playback continuity remain unexercised.
+- **Next steps:**
+  1. Rerun Claude Fable on `dev...HEAD`.
+  2. Publish, open the PR against `dev`, and merge only after explicit `SIGN_OFF`.
+  3. Field-test connected and disconnected refresh behavior plus Android Auto playback continuity.
+
+
+## 2026-07-24 — dev-to-main promotion reconciliation
+
+- **What changed:** Merged current `origin/main` into `dev` before promotion. Resolved the Pairing and Garage conflicts by retaining the Calm Cockpit UI while integrating the main versioned 24-character pairing-code validation, formatting, and canonical submission. Retained the main confirmed vehicle-removal flow in Garage, including persisted vehicle/credential removal and monitor restart. Preserved the append-only handoff records from both branches.
+- **Why:** `dev` was 33 commits ahead of `main` but 10 commits behind it. A direct promotion conflicted with the secure-pairing upgrade in `PairingScreen.kt`, `VehicleListScreen.kt`, and this handoff file.
+- **Status:** Reconciliation complete and verified locally; no roadmap resequencing. The `dev` to `main` promotion PR is the next action.
+- **Next steps:**
+  1. Commit and push the reconciled `dev` merge.
+  2. Open a ready PR from `dev` into `main`.
+  3. Review/merge the promotion through the normal GitHub workflow.
+- **Verification:**
+  - Focused secure pairing UI compile/test initially exposed the obsolete six-digit PIN helper collision; removing that superseded helper made `PairingScreenTest` pass.
+  - `git diff --cached --check` -> PASS.
+  - `./gradlew :app:testDebugUnitTest :app:assembleDebug` -> PASS (`BUILD SUCCESSFUL`; 192 tests, zero failures/errors/skips).
+  - Debug APK SHA-256: `a9830b991b2babbace9117c731ffad2479dfd12d2f39dc5989c86fa062231e4f`.
+  - Live Pixel/Android Auto validation was not repeated for this branch reconciliation.

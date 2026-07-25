@@ -11,12 +11,20 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -57,72 +65,102 @@ fun QrScanScreen(
     }
 
     LaunchedEffect(Unit) {
-        if (!hasCameraPermission) {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
-        }
+        if (!hasCameraPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(WindowInsets.safeDrawing.asPaddingValues())
+            .padding(horizontal = 22.dp),
     ) {
+        CockpitTopBar(title = "Scan pairing code", onBack = onCancel)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Point your camera at the QR code on the head unit.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(18.dp))
+
         when {
             hasCameraPermission -> {
-                Text(
-                    "Scan QR Code",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(16.dp)
-                )
-                Text(
-                    "Point your camera at the QR code on the head unit",
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                CameraPreviewWithScanner(
-                    onScanned = onScanned,
-                    onCameraError = { cameraError = it },
+                Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .padding(16.dp)
-                )
-
-                cameraError?.let { message ->
-                    Text(
-                        text = message,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                }
-
-                TextButton(
-                    onClick = onCancel,
-                    modifier = Modifier.padding(16.dp)
+                        .clip(MaterialTheme.shapes.large)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.large),
                 ) {
-                    Text("Cancel")
+                    CameraPreviewWithScanner(
+                        onScanned = onScanned,
+                        onCameraError = { cameraError = it },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    ScanFrameOverlay(Modifier.fillMaxSize())
+                }
+                cameraError?.let { message ->
+                    Spacer(Modifier.height(12.dp))
+                    CockpitCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics { liveRegion = LiveRegionMode.Polite },
+                    ) {
+                        Text("Camera unavailable", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
+                        Spacer(Modifier.height(4.dp))
+                        Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
             permissionDenied -> {
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    "Camera permission is required to scan QR codes.",
-                    modifier = Modifier.padding(32.dp)
-                )
-                TextButton(onClick = onCancel) {
-                    Text("Go Back")
+                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CockpitCard(modifier = Modifier.fillMaxWidth()) {
+                        Text("Camera access needed", style = MaterialTheme.typography.titleLarge)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Camera permission is required to scan pairing codes.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(14.dp))
+                        CockpitTextButton(onClick = onCancel, modifier = Modifier.align(Alignment.End)) {
+                            Text("Go back")
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.weight(1f))
             }
             else -> {
-                // Waiting for permission dialog
-                Spacer(modifier = Modifier.weight(1f))
-                CircularProgressIndicator()
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Requesting camera permission...")
-                Spacer(modifier = Modifier.weight(1f))
+                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CockpitCard(modifier = Modifier.fillMaxWidth()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(12.dp))
+                            Text("Requesting camera permission…", style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
             }
         }
+        Spacer(Modifier.height(18.dp))
+    }
+}
+
+@Composable
+private fun ScanFrameOverlay(modifier: Modifier = Modifier) {
+    val color = MaterialTheme.colorScheme.primary
+    Canvas(modifier) {
+        val inset = size.minDimension * 0.08f
+        val length = size.minDimension * 0.14f
+        val stroke = size.minDimension * 0.012f
+        val left = inset
+        val top = inset
+        val right = size.width - inset
+        val bottom = size.height - inset
+        fun line(start: Offset, end: Offset) = drawLine(color, start, end, stroke, StrokeCap.Round)
+        line(Offset(left, top + length), Offset(left, top)); line(Offset(left, top), Offset(left + length, top))
+        line(Offset(right - length, top), Offset(right, top)); line(Offset(right, top), Offset(right, top + length))
+        line(Offset(left, bottom - length), Offset(left, bottom)); line(Offset(left, bottom), Offset(left + length, bottom))
+        line(Offset(right - length, bottom), Offset(right, bottom)); line(Offset(right, bottom), Offset(right, bottom - length))
     }
 }
 

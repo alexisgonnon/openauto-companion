@@ -12,11 +12,10 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import org.openauto.companion.MonitorLifecycle
 import org.openauto.companion.data.Vehicle
-import org.openauto.companion.net.api.ApiCrypto
 
 class WifiMonitor(
     private val context: Context,
-    private val vehicles: List<Vehicle>
+    vehicles: List<Vehicle>
 ) : MonitorLifecycle {
     private val connectivityManager =
         context.getSystemService(ConnectivityManager::class.java)
@@ -25,18 +24,16 @@ class WifiMonitor(
     private var wifiNetwork: Network? = null
     @Volatile
     private var activeVehicle: Vehicle? = null
-    private val runtimeVehicles = vehicles.filter(::hasValidRuntimeCredentials)
-    private val ssidMap: Map<String, Vehicle> = runtimeVehicles.associateBy { it.ssid }
+    private val vehicleCatalog = RuntimeVehicleCatalog(vehicles)
 
     private val networkCallback = object : ConnectivityManager.NetworkCallback(
         FLAG_INCLUDE_LOCATION_INFO
     ) {
         override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
             val wifiInfo = caps.transportInfo as? WifiInfo ?: return
-            val ssid = wifiInfo.ssid?.removeSurrounding("\"") ?: return
-            if (ssid == "<unknown ssid>") return
+            val ssid = readableSsid(wifiInfo.ssid) ?: return
 
-            val vehicle = ssidMap[ssid] ?: return
+            val vehicle = vehicleCatalog.findBySsid(ssid) ?: return
             if (activeVehicle?.ssid == ssid && wifiNetwork == network) return
 
             Log.i(TAG, "Matched vehicle '${vehicle.name}' on SSID: $ssid")
@@ -56,6 +53,7 @@ class WifiMonitor(
 
     override fun start() {
         if (registered) return
+        val runtimeVehicles = vehicleCatalog.runtimeVehicles
         if (runtimeVehicles.isEmpty()) {
             Log.i(TAG, "WiFi monitor has no vehicles with valid External API v1 credentials")
             return
@@ -73,26 +71,52 @@ class WifiMonitor(
         checkCurrentNetwork()
     }
 
-    private fun checkCurrentNetwork() {
+    override fun refresh() {
+        checkCurrentNetwork(
+            forceReconnect = true,
+            clearWhenMissing = true,
+        )
+    }
+
+    fun refresh(vehicles: List<Vehicle>) {
+        vehicleCatalog.replace(vehicles)
+        refresh()
+    }
+
+    private fun checkCurrentNetwork(
+        forceReconnect: Boolean = false,
+        clearWhenMissing: Boolean = false,
+    ) {
+        var wifiObserved = false
+        var readableSsidObserved = false
+        var inspectionFailed = false
+
         try {
             @Suppress("DEPRECATION")
             for (network in connectivityManager.allNetworks) {
-                val caps = connectivityManager.getNetworkCapabilities(network) ?: continue
+                val caps = connectivityManager.getNetworkCapabilities(network)
+                if (caps == null) {
+                    inspectionFailed = true
+                    continue
+                }
                 if (!caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) continue
+                wifiObserved = true
                 val wifiInfo = caps.transportInfo as? WifiInfo
-                val ssid = wifiInfo?.ssid?.removeSurrounding("\"")
+                val ssid = readableSsid(wifiInfo?.ssid)
+                if (ssid != null) readableSsidObserved = true
                 Log.i(TAG, "Network check: transport=WiFi, ssid=$ssid")
-                val vehicle = ssid?.let { ssidMap[it] }
+                val vehicle = ssid?.let(vehicleCatalog::findBySsid)
                 if (vehicle != null) {
                     Log.i(TAG, "Already connected to vehicle '${vehicle.name}' via ConnectivityManager")
                     wifiNetwork = network
                     activeVehicle = vehicle
-                    startCompanionService(vehicle)
+                    startCompanionService(vehicle, forceReconnect)
                     return
                 }
                 if (wifiNetwork == null) wifiNetwork = network
             }
         } catch (e: Exception) {
+            inspectionFailed = true
             Log.w(TAG, "ConnectivityManager network scan failed", e)
         }
 
@@ -101,19 +125,35 @@ class WifiMonitor(
             val wifiManager = context.getSystemService(WifiManager::class.java)
             @Suppress("DEPRECATION")
             val info = wifiManager.connectionInfo
-            val ssid = info?.ssid?.removeSurrounding("\"")
+            val ssid = readableSsid(info?.ssid)
+            if (ssid != null) readableSsidObserved = true
             Log.i(TAG, "WifiManager fallback: ssid=$ssid")
-            val vehicle = ssid?.let { ssidMap[it] }
+            val vehicle = ssid?.let(vehicleCatalog::findBySsid)
             if (vehicle != null) {
                 Log.i(TAG, "Already connected to vehicle '${vehicle.name}' via WifiManager")
                 activeVehicle = vehicle
-                startCompanionService(vehicle)
+                startCompanionService(vehicle, forceReconnect)
                 return
             }
         } catch (e: Exception) {
+            inspectionFailed = true
             Log.w(TAG, "WifiManager fallback failed", e)
         }
 
+        val shouldClearRuntime = shouldClearRuntimeAfterNoMatch(
+            clearWhenMissing = clearWhenMissing,
+            connected = CompanionService.connected.value,
+            wifiObserved = wifiObserved,
+            readableSsidObserved = readableSsidObserved,
+            inspectionFailed = inspectionFailed,
+        )
+        if (shouldClearRuntime) {
+            wifiNetwork = null
+            activeVehicle = null
+            stopCompanionService()
+        } else if (clearWhenMissing) {
+            Log.i(TAG, "Preserving connected runtime because WiFi state is indeterminate")
+        }
         Log.i(TAG, "No paired vehicle SSID found in current networks")
     }
 
@@ -129,7 +169,10 @@ class WifiMonitor(
 
     fun getWifiNetwork(): Network? = wifiNetwork
 
-    private fun startCompanionService(vehicle: Vehicle) {
+    private fun startCompanionService(
+        vehicle: Vehicle,
+        forceReconnect: Boolean = false,
+    ) {
         val clientId = vehicle.apiClientId.trim()
         val secretHex = vehicle.apiSecretHex.trim()
         if (!hasValidRuntimeCredentials(vehicle)) {
@@ -147,17 +190,19 @@ class WifiMonitor(
             putExtra(CompanionService.EXTRA_API_TCP_PORT, vehicle.apiTcpPort)
             putExtra(CompanionService.EXTRA_SOCKS5_ENABLED, vehicle.socks5Enabled)
             putExtra(CompanionService.EXTRA_AUDIO_KEEP_ALIVE, vehicle.audioKeepAlive)
+            putExtra(CompanionService.EXTRA_FORCE_RECONNECT, forceReconnect)
         }
         ContextCompat.startForegroundService(context, intent)
     }
 
-    private fun hasValidRuntimeCredentials(vehicle: Vehicle): Boolean =
-        vehicle.apiClientId.isNotBlank() &&
-            ApiCrypto.decodeSecretHex(vehicle.apiSecretHex) != null
-
     private fun stopCompanionService() {
         context.stopService(Intent(context, CompanionService::class.java))
     }
+
+    private fun readableSsid(rawSsid: String?): String? =
+        rawSsid
+            ?.removeSurrounding("\"")
+            ?.takeIf { it.isNotBlank() && it != WifiManager.UNKNOWN_SSID }
 
     companion object {
         private const val TAG = "WifiMonitor"

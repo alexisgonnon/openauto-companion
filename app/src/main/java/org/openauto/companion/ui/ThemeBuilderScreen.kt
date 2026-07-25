@@ -336,7 +336,7 @@ fun ThemeBuilderScreen(
                         )
                     },
                     confirmButton = {
-                        TextButton(
+                        CockpitTextButton(
                             onClick = {
                                 showSendDialog = false
                                 val theme = generatedTheme
@@ -350,7 +350,7 @@ fun ThemeBuilderScreen(
                         ) { Text("Send") }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showSendDialog = false }) { Text("Cancel") }
+                        CockpitTextButton(onClick = { showSendDialog = false }) { Text("Cancel") }
                     }
                 )
             }
@@ -479,12 +479,12 @@ private fun ColorPickerDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onColorSelected(pickedColor) }) {
+            CockpitTextButton(onClick = { onColorSelected(pickedColor) }) {
                 Text("Select")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            CockpitTextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
         }

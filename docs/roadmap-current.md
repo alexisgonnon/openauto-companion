@@ -50,11 +50,19 @@ Governance: capture new ideas in `docs/wishlist.md`; only promoted items should 
     requiring the AA Wi-Fi network to become Android's default route.
 - Verify recent connection reliability fixes on-device.
   - Rationale: latest behavior change included Wi-Fi socket fallback (`EPERM`) and should be validated in real network conditions.
-  - Outcome: confidence that fallback path and reconnect logic behave as expected across devices.
+  - Outcome: Garage and Vehicle Status user-triggered current-network reconciliation was live-validated on-device for a healthy connected runtime only; automatic Android callback reliability remains under observation.
 - Operate from the Superpowers-native management loop docs.
   - Rationale: continuity across sessions is now a core workflow requirement.
   - Outcome: all behavior-changing sessions use Superpowers plus repo docs and
     leave vision alignment + handoff evidence without GSD or `.planning` state.
+
+- Calm Cockpit UI refresh: implementation complete; unlocked-device visual pass pending.
+  - Rationale: promote the UI polish wishlist item into a coherent low-glare
+    experience across garage, status, QR-first pairing, and scanning.
+  - Dependency check: companion-only; no head-unit, protocol, persistence, or
+    runtime-service changes.
+  - Outcome: code and full Gradle gate are complete on `codex/ui-refresh`;
+    finish tap-through QA after the attached Pixel is unlocked.
 
 ## Next
 
@@ -89,9 +97,6 @@ Governance: capture new ideas in `docs/wishlist.md`; only promoted items should 
 - Add CI automation for `:app:testDebugUnitTest` and `:app:assembleDebug` on pull requests.
   - Rationale: local verification is good; CI makes quality gates persistent.
   - Outcome: less risk of broken branches and faster review confidence.
-- Evaluate UI polish pass for status and pairing screens.
-  - Rationale: core behavior is improving; UX clarity can now be refined without changing architecture.
-  - Outcome: cleaner in-app guidance and reduced pairing friction.
 
 ## Deferred
 
