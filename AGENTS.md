@@ -13,6 +13,18 @@ Resume context from this file, `docs/project-vision.md`,
 `docs/roadmap-current.md`, `docs/session-handoffs.md`, and relevant
 `docs/plans/` or `docs/superpowers/` files.
 
+## Branch Policy
+
+- Perform routine development directly on `dev`.
+- Do not create branches for individual features, tasks, agents, or review
+  fixes.
+- Commit coherent work to `dev`, then open a `dev` to `main` pull request
+  when there is a meaningful, verified batch ready for promotion.
+- After a promotion PR merges, fast-forward `dev` to the new `main` tip and
+  push it so the two branches do not diverge.
+- Keep `main` as the promoted/release branch; do not commit development work
+  directly to it.
+
 ## Project Management Loop
 
 For behavior-changing work in this repository:

@@ -66,6 +66,13 @@ Run the unit tests and build verification gate with:
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
+## Development workflow
+
+Ongoing work is committed directly to `dev`; this repository does not use a
+separate branch for each feature. When `dev` contains a meaningful, verified
+batch of work, promote it through a pull request into `main`. After the PR
+merges, fast-forward `dev` to `main` so the branches remain aligned.
+
 ## Project status
 
 The core API v1 pairing, reconnect, telemetry, web configuration, and theme
